@@ -1,3 +1,4 @@
+import math
 import tkinter as tk
 import obd  # Make sure obd library is installed
 import time
@@ -20,15 +21,15 @@ class CarDashboard(tk.Tk):
 
         self.gauges = []
         for i, title in enumerate(self.gauge_titles):
-            self.create_gauge(i, title)
+            self.create_gauge2(i, title)
 
         # Add a Reset button
         reset_button = tk.Button(self, text="Reset Max/Min", command=self.reset_values)
-        reset_button.pack(side="bottom", pady=10, expand = True)
+        reset_button.grid(column=0, row=0)
 
     def create_gauge(self, index, title):
         frame = tk.Frame(self)
-        frame.pack(side="left", padx=10)
+        frame.grid(column=index-index%2, row=index%2)
 
         label = tk.Label(frame, text=title)
         label.pack()
