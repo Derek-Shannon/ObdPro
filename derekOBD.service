@@ -1,0 +1,16 @@
+[Unit]
+Description=My Python OBD App
+After=multi-user.target
+
+[Service]
+ExecStartPre=/bin/sleep 10
+ExecStart=/bin/bash -c 'source /home/mrmuffin56/PiOBD/env/bin/activate && python /home/mrmuffin56/PiOBD/logger.py'
+WorkingDirectory=/home/mrmuffin56/PiOBD/
+StandardOutput=tty
+StandardError=tty
+TTYPath=/dev/tty1
+User=mrmuffin56
+Restart=no
+
+[Install]
+WantedBy=multi-user.target

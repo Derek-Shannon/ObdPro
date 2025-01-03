@@ -1,0 +1,2 @@
+sudo apt install xinit xorg
+startx
