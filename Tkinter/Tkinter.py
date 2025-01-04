@@ -3,68 +3,23 @@ import tkinter as tk
 import obd  # Make sure obd library is installed
 import time
 import random
+import Gauge
+import json
 
 class CarDashboard(tk.Tk):
-    def __init__(self, names, values, ranges, units):
+    def __init__(self):
         super().__init__()
         self.title("Car Dashboard")
         self.geometry("850x600")
 
-        self.gauge_titles = names
-        self.gauge_ranges = ranges
-        self.gauge_units = units
-        self.gauge_values = values 
-
-        # Lists to store maximum and minimum values for each gauge
-        self.max_values = values.copy()
-        self.min_values = values.copy()
-
         self.gauges = []
-        for i, title in enumerate(self.gauge_titles):
-            self.create_gauge2(i, title)
 
         # Add a Reset button
         reset_button = tk.Button(self, text="Reset Max/Min", command=self.reset_values)
         reset_button.grid(column=0, row=0)
-
-    def create_gauge(self, index, title):
-        frame = tk.Frame(self)
-        frame.grid(column=index-index%2, row=index%2)
-
-        label = tk.Label(frame, text=title)
-        label.pack()
-
-        canvas = tk.Canvas(frame, width=30, height=200)
-        canvas.pack()
-
-        canvas.create_rectangle(0, 0, 30, 200, fill="gray", outline="gray")
-
-        value = self.gauge_values[index]
-        min_value, max_value, change1, change2 = self.gauge_ranges[index]
-
-        colored_height = self.scale_value(value, min_value, max_value, 200)
-        color = self.get_gauge_color(value, change1, change2)
-        canvas.create_rectangle(0, 200 - colored_height, 30, 200, fill=color, outline=color)
-
-        value_label = tk.Label(frame, text=f"{value} {self.gauge_units[index]}")
-        value_label.pack()
-
-        # Create labels to show max and min values
-        max_value_label = tk.Label(frame, text=f"Max: {value} {self.gauge_units[index]}")
-        max_value_label.pack()
-
-        min_value_label = tk.Label(frame, text=f"Min: {value} {self.gauge_units[index]}")
-        min_value_label.pack()
-
-        # Store the canvas, value label, max and min value labels
-        self.gauges.append((canvas, value_label, max_value_label, min_value_label))
-
-    def scale_value(self, value, min_value, max_value, height):
-        if value < min_value:
-            return 0
-        if value > max_value:
-            return height
-        return ((value - min_value) / (max_value - min_value)) * height
+    def addGauge(self, gauge: Gauge):
+        self.gauges.append(gauge)
+        gauge.grid(column=len(self.gauges)-(len(self.gauges)-1)%2-1, row=len(self.gauges)%2+2)
 
     def get_gauge_color(self, value, min_value, max_value):
         if value < min_value:
@@ -75,37 +30,12 @@ class CarDashboard(tk.Tk):
             return "green"
 
     def update_gauge(self, values):
-        for index in range(len(self.gauge_titles)):
-            self.gauge_values[index] = values[index]
-            canvas, value_label, max_value_label, min_value_label = self.gauges[index]
-
-            min_value, max_value, change1, change2 = self.gauge_ranges[index]
-            colored_height = self.scale_value(values[index], min_value, max_value, 200)
-            color = self.get_gauge_color(values[index], change1, change2)
-
-            canvas.coords(canvas.find_all()[1], 0, 200 - colored_height, 30, 200)
-            canvas.itemconfig(canvas.find_all()[1], fill=color)
-
-            value_label.config(text=f"{values[index]} {self.gauge_units[index]}")
-
-            # Update max and min values
-            if values[index] > self.max_values[index]:
-                self.max_values[index] = values[index]
-                max_value_label.config(text=f"Max: {self.max_values[index]} {self.gauge_units[index]}")
-
-            if values[index] < self.min_values[index]:
-                self.min_values[index] = values[index]
-                min_value_label.config(text=f"Min: {self.min_values[index]} {self.gauge_units[index]}")
+        for index in range(len(self.gauges)):
+            self.gauges[index].set_value(values[index])
 
     def reset_values(self):
-        # Reset max and min values to the current values
-        self.max_values = self.gauge_values.copy()
-        self.min_values = self.gauge_values.copy()
-
-        # Update the labels to reflect the reset
-        for index, (_, _, max_value_label, min_value_label) in enumerate(self.gauges):
-            max_value_label.config(text=f"Max: {self.gauge_values[index]} {self.gauge_units[index]}")
-            min_value_label.config(text=f"Min: {self.gauge_values[index]} {self.gauge_units[index]}")
+        for gauge in self.gauges:
+            gauge.resetMinMax()
 
 class ObdPro:
     def __init__(self):
@@ -162,25 +92,28 @@ class ObdPro:
         app.update_gauge(self.getQuerryOutput())
         app.after(100, self.displayLoop, app)
 class FakeObdPro:
-    def __init__(self):
-        self.names = [
-            "Speed", "Rpm", "Engine_Load", "MAF", 
-            "Intake_Temp", "Ambiant_Air_Temp", "Coolant_temp", "Spark_adv"
-        ]
-        self.querryOutput = [0] * len(self.names)
+    def __init__(self, data_list):
+        self.data_list = data_list
+        self.querryOutput = [0] * len(self.data_list)
         self.frame_counter = 0
 
+        self.last_query_output = [0] * len(self.data_list)
+        self.moveTimer = [0] * len(self.data_list)
+        self.movePower = [0] * len(self.data_list)
+
     def generate_fake_data(self):
-        self.querryOutput = [
-            random.randint(0, 135),        # Speed in mph
-            random.randint(0, 7500),       # RPM
-            random.randint(0, 100),        # Engine Load %
-            random.randint(0, 100),        # MAF in lbs/min
-            random.randint(-40, 100),      # Intake Temperature °F
-            random.randint(-4, 122),       # Ambient Air Temperature °F
-            random.randint(14, 212),       # Coolant Temperature °F
-            random.randint(0, 50),         # Spark Advance degrees
-        ]
+        new_query_output = []
+        for index in range(len(data_list)):
+            self.moveTimer[index] -= 1
+            if self.moveTimer[index] <= 0:
+                self.moveTimer[index] = random.randint(1,8)
+                full_range = data_list[index].max_value-data_list[index].min_value
+                self.movePower[index] = random.randint(int(-full_range/10),int(full_range/10))
+            value = self.last_query_output[index]+self.movePower[index]
+            new_query_output.append(max(data_list[index].min_value, min(value, data_list[index].max_value)))
+
+        self.last_query_output = new_query_output
+        self.querryOutput = new_query_output
 
     def getQuerryOutput(self):
         self.generate_fake_data()
@@ -191,16 +124,73 @@ class FakeObdPro:
         self.frame_counter += 1
 
         # Check if the frame counter is a multiple of 10
-        if self.frame_counter % 10 == 0:
-            app.update_gauge(self.getQuerryOutput())
+        #if self.frame_counter % 3 == 0:
+        app.update_gauge(self.getQuerryOutput())
 
         # Continue the loop with a delay
         app.after(100, self.displayLoop, app)
 
+
+class Data:
+    def __init__(
+        self,
+        name: str,
+        query_reference,
+        unit: str,
+        blue: int = 0,
+        light_blue: int = 0,
+        yellow: int = 0,
+        red: int = 0,
+        min_value: int = 0,
+        max_value: int = 100,
+    ):
+        self.name = name
+        self.query_reference = query_reference
+        self.unit = unit
+        self.blue = blue
+        self.light_blue = light_blue
+        self.yellow = yellow
+        self.red = red
+        self.min_value = min_value
+        self.max_value = max_value
+    def to_gauge_params(self):
+        #Converts Data attributes to a dictionary compatible with Gauge initialization.
+        return {
+            "label": self.name,
+            "unit": self.unit,
+            "min_value": self.min_value,
+            "max_value": self.max_value,
+            "blue": self.blue,
+            "light_blue": self.light_blue,
+            "yellow": self.yellow,
+            "red": self.red,
+        }
+
+
 if __name__ == "__main__":
+    # Load the JSON data
+    with open('input_data.json', 'r', encoding="utf-8") as file:
+        json_data = json.load(file)
+
+    # Convert JSON to Data objects
+    data_list = [
+        Data(
+            name=item["name"],
+            query_reference=getattr(obd.commands, item["query_reference"]),
+            unit=item["unit"],
+            min_value=item["min_value"],
+            max_value=item["max_value"],
+            blue=item.get("blue", -9999),
+            light_blue=item.get("light_blue", -9999),
+            yellow=item.get("yellow", 9999),
+            red=item.get("red", 9999)
+        )
+        for item in json_data
+    ]
+
     obdPro = None
     if True:
-        obdPro = FakeObdPro()
+        obdPro = FakeObdPro(data_list)
     else:
         obdPro = ObdPro()
         obdPro.addValue("Speed", obd.commands.SPEED)
@@ -212,19 +202,9 @@ if __name__ == "__main__":
         obdPro.addValue("Coolant_temp", obd.commands.COOLANT_TEMP)
         obdPro.addValue("Spark_adv", obd.commands.TIMING_ADVANCE)
     
-    ranges = [
-        #(min, max, change1, change2)
-        (0, 135, 0, 135),
-        (0, 7500, 2000, 5000),
-        (0, 100, 0, 80),
-        (0, 100, 0, 100),
-        (-40, 100, 0, 70),
-        (-40, 122, 0, 80),
-        (-40, 212, 80, 110),
-        (0, 50, 0, 50),
-    ]
-    units = ["mph", "RPM", "%", "lbs/min", "°F", "°F", "°F", "degrees"]
-    
-    app = CarDashboard(obdPro.names, obdPro.getQuerryOutput(), ranges, units)
+    app = CarDashboard()
+    #add gauges
+    for data in data_list:
+        app.addGauge(Gauge.Gauge(app, **data.to_gauge_params()))
     obdPro.displayLoop(app)
     app.mainloop()

@@ -33,11 +33,11 @@ class Gauge(tk.Frame):
         max_value=100.0,
         label="",
         unit="",
-        divisions=20,
-        yellow=50,
+        divisions=20, 
+        yellow=60,    #0 for nothing of that color
         red=80,
-        yellow_low=0,
-        red_low=10,
+        light_blue=40,
+        blue=20,
         bg="lightgrey",
         bg_color="white"
     ):
@@ -50,19 +50,28 @@ class Gauge(tk.Frame):
         self._min_value = int(min_value)
         self._max_value = int(max_value)
         self._average_value = int((max_value + min_value) / 2)
-        self._yellow = yellow * 0.01
-        self._red = red * 0.01
-        self._yellow_low = yellow_low * 0.01
-        self._red_low = red_low * 0.01
+        self._yellow = yellow
+        self._red = red
+        self._light_blue = light_blue
+        self._blue = blue
         self.bg_color = bg_color
 
         super().__init__(self._parent)
 
         self._canvas = tk.Canvas(self, width=self._width, height=self._height, bg=bg)
-        self._canvas.grid(row=0, column=0, sticky="news")
+        self._canvas.pack()
+
         self._min_value = int(min_value)
         self._max_value = int(max_value)
         self._value = self._min_value
+        #min/max value display
+        self.variableMax = self._value
+        self.variableMin = self._value
+        self.max_value_label = tk.Label(self, text=f"Max: {self.variableMax} {self._unit}")
+        self.max_value_label.pack()
+        self.min_value_label = tk.Label(self, text=f"Min: {self.variableMin} {self._unit}")
+        self.min_value_label.pack()
+
         self._redraw()
 
     def _redraw(self):
@@ -77,14 +86,14 @@ class Gauge(tk.Frame):
         for i in range(self._divisions):
             extent = max_angle / self._divisions
             start = 150.0 - i * extent
-            rate = (i + 1) / (self._divisions + 1)
-            if rate < self._red_low:
-                bg_color = "red"
-            elif rate <= self._yellow_low:
-                bg_color = "yellow"
-            elif rate <= self._yellow:
+            value_at_division = self._min_value + (self._max_value - self._min_value) * (i / self._divisions)
+            if value_at_division < self._blue:
+                bg_color = "blue"
+            elif value_at_division < self._light_blue: #below green
+                bg_color = "lightblue"
+            elif value_at_division < self._yellow:
                 bg_color = "green"
-            elif rate <= self._red:
+            elif value_at_division < self._red:
                 bg_color = "yellow"
             else:
                 bg_color = "red"
@@ -115,7 +124,21 @@ class Gauge(tk.Frame):
             style="pie",
         )
         # readout & title
-        self.readout(self._value, "black")  # BG black if OK
+        if self._value < self._blue:
+            self.readout(self._value, "blue")
+        elif self._value < self._light_blue:
+            self.readout(self._value, "lightblue")
+        elif self._value < self._yellow:
+            self.readout(self._value, "green")
+        elif self._value < self._red:
+            self.readout(self._value, "yellow")
+        else:
+            self.readout(self._value, "red")
+        
+
+        #min/max
+        self.max_value_label.config(text=f"Max: {self.variableMax} {self._unit}")
+        self.min_value_label.config(text=f"Min: {self.variableMin} {self._unit}")
 
         # display lowest value
         value_text = "{}".format(self._min_value)
@@ -200,21 +223,35 @@ class Gauge(tk.Frame):
             text=self._label,
         )
 
-        value_text = "{}{}".format(self._value, self._unit)
-        self._canvas.create_text(
-            self._width * 0.5,
-            self._height * 0.5 + r_offset,
-            font=("Courier New", 10),
-            text=value_text,
-            fill="white",
-        )
-
+        value_text = "{} {}".format(self._value, self._unit)
+        if bg=="yellow" or bg=="lightblue" or bg=="red":
+            self._canvas.create_text(
+                self._width * 0.5,
+                self._height * 0.5 + r_offset,
+                font=("Courier New", 10),
+                text=value_text,
+                fill="black",
+            )
+        else:
+            self._canvas.create_text(
+                self._width * 0.5,
+                self._height * 0.5 + r_offset,
+                font=("Courier New", 10),
+                text=value_text,
+                fill="white",
+            )
+    def resetMinMax(self):
+        self.variableMax = self._value
+        self.variableMin = self._value
     def set_value(self, value):
         self._value = int(value)
-        if self._min_value * 1.02 < value < self._max_value * 0.98:
-            self._redraw()  # refresh all
-        else:  # OFF limits refresh only readout
-            self.readout(self._value, "red")  # on RED BackGround
+        #update min/max
+        if self._value > self.variableMax:
+            self.variableMax = self._value
+        elif self._value < self.variableMin:
+            self.variableMin = self._value
+        self._redraw()  # refresh all
+        
     def update_gauge_randomly(self, gauge):
         # Generate a random value within the gauge's range
         random_value = random.uniform(gauge._min_value, gauge._max_value)
@@ -224,15 +261,15 @@ class Gauge(tk.Frame):
 
 
 
-# if __name__ == "__main__":
-#     root = tk.Tk()
-#     root.title("Gauge with Random Values")
+if __name__ == "__main__":
+    root = tk.Tk()
+    root.title("Gauge with Random Values")
 
-#     # Create a gauge instance
-#     gauge = Gauge(root, max_value=120.0, label="Speed", unit="km/h", yellow=30, red=70)
-#     gauge.grid(padx=20, pady=20)
+    # Create a gauge instance
+    gauge = Gauge(root, max_value=120.0, label="Speed", unit="km/h")
+    gauge.grid(padx=20, pady=20)
 
-#     # Start the random value updates
-#     gauge.update_gauge_randomly(gauge)
+    # Start the random value updates
+    gauge.update_gauge_randomly(gauge)
 
-#     root.mainloop()
+    root.mainloop()
