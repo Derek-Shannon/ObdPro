@@ -44,8 +44,8 @@ class ObdPro:
         self.connect()
 
         self.names = []
-        self.querryReferences = []
-        self.querryOutput = [0] * 8  # Initializing with zeroes
+        self.queryReferences = []
+        self.queryOutput = [0] * 8  # Initializing with zeroes
 
     def connect(self):
         while True:
@@ -61,9 +61,9 @@ class ObdPro:
                 print(f"Error connecting: {e}, retrying...")
             time.sleep(2)
 
-    def addValue(self, name: str, querryReference):
+    def addValue(self, name: str, queryReference):
         self.names.append(name)
-        self.querryReferences.append(querryReference)
+        self.queryReferences.append(queryReference)
 
     def convert_to_standard_units(self, index, value):
         if self.names[index] == "Speed":
@@ -75,26 +75,26 @@ class ObdPro:
         return int(value)
 
     def _getDataString(self):
-        for i, cmd in enumerate(self.querryReferences):
+        for i, cmd in enumerate(self.queryReferences):
             result = self.connection.query(cmd)
             if result is None or result.is_null():
-                self.querryOutput[i] = 0
+                self.queryOutput[i] = 0
             else:
                 value = result.value.magnitude if hasattr(result.value, 'magnitude') else result.value
-                self.querryOutput[i] = self.convert_to_standard_units(i, value)
-        return "   ".join(map(str, self.querryOutput))
+                self.queryOutput[i] = self.convert_to_standard_units(i, value)
+        return "   ".join(map(str, self.queryOutput))
 
-    def getQuerryOutput(self):
-        return self.querryOutput
+    def getQueryOutput(self):
+        return self.queryOutput
 
     def displayLoop(self, app):
         self._getDataString()
-        app.update_gauge(self.getQuerryOutput())
+        app.update_gauge(self.getQueryOutput())
         app.after(100, self.displayLoop, app)
 class FakeObdPro:
     def __init__(self, data_list):
         self.data_list = data_list
-        self.querryOutput = [0] * len(self.data_list)
+        self.queryOutput = [0] * len(self.data_list)
         self.frame_counter = 0
 
         self.last_query_output = [0] * len(self.data_list)
@@ -113,11 +113,11 @@ class FakeObdPro:
             new_query_output.append(max(data_list[index].min_value, min(value, data_list[index].max_value)))
 
         self.last_query_output = new_query_output
-        self.querryOutput = new_query_output
+        self.queryOutput = new_query_output
 
-    def getQuerryOutput(self):
+    def getQueryOutput(self):
         self.generate_fake_data()
-        return self.querryOutput
+        return self.queryOutput
 
     def displayLoop(self, app):
         # Increment the frame counter
@@ -125,7 +125,7 @@ class FakeObdPro:
 
         # Check if the frame counter is a multiple of 10
         #if self.frame_counter % 3 == 0:
-        app.update_gauge(self.getQuerryOutput())
+        app.update_gauge(self.getQueryOutput())
 
         # Continue the loop with a delay
         app.after(100, self.displayLoop, app)
@@ -193,14 +193,8 @@ if __name__ == "__main__":
         obdPro = FakeObdPro(data_list)
     else:
         obdPro = ObdPro()
-        obdPro.addValue("Speed", obd.commands.SPEED)
-        obdPro.addValue("Rpm", obd.commands.RPM)
-        obdPro.addValue("Engine_Load", obd.commands.ENGINE_LOAD)
-        obdPro.addValue("MAF", obd.commands.MAF)
-        obdPro.addValue("Intake_Temp", obd.commands.INTAKE_TEMP)
-        obdPro.addValue("Ambiant_Air_Temp", obd.commands.AMBIANT_AIR_TEMP)
-        obdPro.addValue("Coolant_temp", obd.commands.COOLANT_TEMP)
-        obdPro.addValue("Spark_adv", obd.commands.TIMING_ADVANCE)
+        for data in data_list:
+            obdPro.addValue(data.name, data.query_reference)
     
     app = CarDashboard()
     #add gauges
