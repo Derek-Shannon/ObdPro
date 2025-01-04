@@ -68,7 +68,7 @@ class ObdPro:
     def convert_to_standard_units(self, index, value):
         if self.names[index] == "Speed":
             return int(value * 0.621371)
-        elif self.names[index] in ["Intake_Temp", "Ambiant_Air_Temp", "Coolant_temp"]:
+        elif self.names[index] in ["Intake_Temp", "Ambiant_Temp", "Coolant_temp"]:
             return int(value * 9 / 5 + 32)
         elif self.names[index] == "MAF":
             return int(value * 0.132277)
@@ -189,7 +189,7 @@ if __name__ == "__main__":
     ]
 
     obdPro = None
-    if True:
+    if False:
         obdPro = FakeObdPro(data_list)
     else:
         obdPro = ObdPro()
