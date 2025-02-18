@@ -1,0 +1,5 @@
+Run command:
+
+cd "OBD-Export"
+venv\Scripts\activate
+python Tkinter.py

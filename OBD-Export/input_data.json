@@ -1,0 +1,85 @@
+[
+    {
+        "name": "Speed",
+        "query_reference": "SPEED",
+        "unit": "mph",
+        "min_value": 0,
+        "blue": 5,
+        "light_blue": 10,
+        "yellow": 50,
+        "red": 80,
+        "max_value": 130
+    },
+    {
+        "name": "Rpm",
+        "query_reference": "RPM",
+        "unit": "RPM",
+        "min_value": 0,
+        "blue": 1500,
+        "light_blue": 2500,
+        "yellow": 4000,
+        "red": 5800,
+        "max_value": 7000
+    },
+    {
+        "name": "Engine_Load",
+        "query_reference": "ENGINE_LOAD",
+        "unit": "%",
+        "min_value": 0,
+        "blue": 15,
+        "light_blue": 30,
+        "yellow": 65,
+        "red": 90,
+        "max_value": 100
+    },
+    {
+        "name": "MAF",
+        "query_reference": "MAF",
+        "unit": "lbs/min",
+        "min_value": 0,
+        "blue": 10,
+        "light_blue": 20,
+        "yellow": 50,
+        "red": 80,
+        "max_value": 100
+    },
+    {
+        "name": "Intake_Temp",
+        "query_reference": "INTAKE_TEMP",
+        "unit": "°F",
+        "min_value": -40,
+        "light_blue":50,
+        "yellow": 100,
+        "red": 130,
+        "max_value": 140
+    },
+    {
+        "name": "Ambiant_Temp",
+        "query_reference": "AMBIANT_AIR_TEMP",
+        "unit": "°F",
+        "min_value": -40,
+        "max_value": 122
+    },
+    {
+        "name": "Coolant_temp",
+        "query_reference": "COOLANT_TEMP",
+        "unit": "°F",
+        "min_value": 140,
+        "blue": 160,
+        "light_blue": 180,
+        "yellow": 210,
+        "red": 230,
+        "max_value": 250
+    },
+    {
+        "name": "Spark_adv",
+        "query_reference": "TIMING_ADVANCE",
+        "unit": "degrees",
+        "min_value": -20,
+        "blue": 0,
+        "light_blue": 10,
+        "yellow": 20,
+        "red": 30,
+        "max_value": 50
+    }
+]
