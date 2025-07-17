@@ -1,7 +1,7 @@
 import math
 import tkinter as tk
 import obd  # Make sure obd library is installed
-import time
+import time, os
 import random
 import Gauge
 import json
@@ -168,8 +168,12 @@ class Data:
 
 
 if __name__ == "__main__":
+    # Get the directory where the current script is located
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    json_file_path = os.path.join(script_dir, 'input_data.json')
+
     # Load the JSON data
-    with open('input_data.json', 'r', encoding="utf-8") as file:
+    with open(json_file_path, 'r', encoding="utf-8") as file:
         json_data = json.load(file)
 
     # Convert JSON to Data objects
@@ -189,7 +193,7 @@ if __name__ == "__main__":
     ]
 
     obdPro = None
-    if False:
+    if True:
         obdPro = FakeObdPro(data_list)
     else:
         obdPro = ObdPro()
