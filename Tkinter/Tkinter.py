@@ -10,6 +10,7 @@ class CarDashboard(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title("Car Dashboard")
+        self.attributes("-fullscreen", True)
         self.geometry("850x600")
 
         self.gauges = []
@@ -19,7 +20,7 @@ class CarDashboard(tk.Tk):
         reset_button.grid(column=0, row=0)
     def addGauge(self, gauge: Gauge):
         self.gauges.append(gauge)
-        gauge.grid(column=len(self.gauges)-(len(self.gauges)-1)%2-1, row=len(self.gauges)%2+2)
+        gauge.grid(column=len(self.gauges)-(len(self.gauges)-1)%3-1, row=len(self.gauges)%3+2)
 
     def get_gauge_color(self, value, min_value, max_value):
         if value < min_value:
@@ -204,5 +205,6 @@ if __name__ == "__main__":
     #add gauges
     for data in data_list:
         app.addGauge(Gauge.Gauge(app, **data.to_gauge_params()))
+    app.reset_values()
     obdPro.displayLoop(app)
     app.mainloop()

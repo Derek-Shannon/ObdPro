@@ -1,2 +1,2 @@
-
-            yellow=item.get("yellow", 9999),
+ge(app, **data.to_gauge_params()))
+    app.reset_values()

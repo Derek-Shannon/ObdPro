@@ -81,5 +81,27 @@
         "yellow": 20,
         "red": 30,
         "max_value": 50
+    },
+    {
+        "name": "Boost",
+        "query_reference": "INTAKE_PRESSURE",
+        "unit": "degrees",
+        "min_value": -25,
+        "blue": -10,
+        "light_blue": 0,
+        "yellow": 8,
+        "red": 12,
+        "max_value": 25
+    },
+    {
+        "name": "Cat_temp_S1",
+        "query_reference": "CATALYST_TEMP_B2S1",
+        "unit": "°F",
+        "min_value": 300,
+        "blue": 600,
+        "light_blue": 800,
+        "yellow": 1200,
+        "red": 1500,
+        "max_value": 1800
     }
 ]
