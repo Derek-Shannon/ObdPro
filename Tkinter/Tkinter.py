@@ -15,6 +15,7 @@ class CarDashboard(tk.Tk):
 
         self.gauges = []
 
+        self.bind("<Escape>", lambda event: self.destroy())
         # Add a Reset button
         reset_button = tk.Button(self, text="Reset Max/Min", command=self.reset_values)
         reset_button.grid(column=0, row=0)
@@ -46,7 +47,7 @@ class ObdPro:
 
         self.names = []
         self.queryReferences = []
-        self.queryOutput = [0] * 8  # Initializing with zeroes
+        self.queryOutput = [0] * 10  # Initializing with zeroes
 
     def connect(self):
         while True:
@@ -194,7 +195,7 @@ if __name__ == "__main__":
     ]
 
     obdPro = None
-    if True:
+    if False:
         obdPro = FakeObdPro(data_list)
     else:
         obdPro = ObdPro()
