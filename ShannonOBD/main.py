@@ -1,4 +1,4 @@
-#Base for switching to Settings
+#ObdPro V2 with settings
 
 import tkinter as tk
 from tkinter import ttk
@@ -40,6 +40,8 @@ class MainScreen(tk.Frame):
         
         settings_button3 = ttk.Button(button_container, text="⚙️ Settings", command=self.app.show_settings_screen)
         settings_button3.pack(pady=5)
+        #gif lug warning
+        
         
     def setup_gauges(self):
         """Updates the configuration of all gauges based on the app's state."""
@@ -170,13 +172,15 @@ class SettingsScreen(tk.Frame):
         """Saves the new settings and returns to the main screen."""
         new_selections = [cb.get() for cb in self.comboboxes]
         self.app.gauge_type_selection = new_selections
+        #save
+        self.app.save_json_data()
         self.app.show_main_screen()
 
 class App(tk.Tk):
     """The main application window."""
     def __init__(self):
         super().__init__()
-        self.title("Customizable Gauges App")
+        self.title("Shannon's Obd Pro")
         self.geometry("480x320")
 
         # Initial selection for the four gauges(should be changeable in future)
@@ -221,6 +225,33 @@ class App(tk.Tk):
             )
             for item in json_data
         ]
+        
+        #load saves
+        saves_json_path = os.path.join(script_dir, 'save_data.json')
+        try:
+            with open(saves_json_path, 'r', encoding="utf-8") as file:
+                content = file.read().strip()
+                if not content:
+                    print("File content is empty.")
+                    json_data = {}  # Default to an empty dictionary
+                else:
+                    json_data = json.loads(content)
+                    self.gauge_type_selection = json_data['gauge_type_selection']
+        except FileNotFoundError:
+            print(f"Error: The file {saves_json_path} was not found.")
+    def save_json_data(self):
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        saves_json_path = os.path.join(script_dir, 'save_data.json')
+        #save data
+        formatted_save_data = {
+            "gauge_type_selection": self.gauge_type_selection
+        }
+        print(formatted_save_data)
+        with open(saves_json_path, 'w') as json_file:
+            # Use json.dump() to write the data to the file
+            # indent=4 makes the output pretty-printed and easy to read
+            json.dump(formatted_save_data, json_file, indent=4)
+        
     def show_main_screen(self):
         """Shows the main screen and hides the settings screen."""
         if self.settings_screen:
