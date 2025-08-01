@@ -10,8 +10,8 @@ class CarDashboard(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title("Car Dashboard")
-        self.attributes("-fullscreen", True)
-        self.geometry("850x600")
+        #self.attributes("-fullscreen", True)
+        self.geometry("480x320")
 
         self.gauges = []
 
@@ -195,7 +195,7 @@ if __name__ == "__main__":
     ]
 
     obdPro = None
-    if False:
+    if True:
         obdPro = FakeObdPro(data_list)
     else:
         obdPro = ObdPro()
