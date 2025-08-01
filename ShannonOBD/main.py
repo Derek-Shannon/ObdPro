@@ -15,13 +15,13 @@ class MainScreen(tk.Frame):
         self.simulation_id = None
         self.images = []
         self.labels = []
+        self.output_label = None
         self.setup_ui()
         
         self.query_output = [0] * len(self.app.data_list)
         self.last_query_output = [0] * len(self.app.data_list)
         self.moveTimer = [0] * len(self.app.data_list)
         self.movePower = [0] * len(self.app.data_list)
-        
 
     def setup_ui(self):
         """Sets up the layout of the main screen."""
@@ -32,7 +32,7 @@ class MainScreen(tk.Frame):
 
          # Create a container frame for the settings buttons
         side_container = tk.Frame(self)
-        side_container.grid(row=0, column=2, sticky="ne", padx=5, pady=5)
+        side_container.grid(row=0, column=2, sticky="ne", padx=0, pady=5)
 
         # Place the settings buttons within the new container frame
         settings_button = ttk.Button(side_container, width=14, text="⚙️ Settings",command=self.app.show_settings_screen)
@@ -50,11 +50,14 @@ class MainScreen(tk.Frame):
             
             # Create a Label widget to display the image
             self.labels.append(tk.Label(side_container, image=self.images[1]))
-            self.labels[0].pack(padx=1, pady=1)
+            self.labels[0].pack(padx=0, pady=1)
             
         except tk.TclError:
             print("Error loading image. Make sure 'my_image.gif' exists and is a valid GIF file.")
-        
+        bottom_container = tk.Frame(self)
+        bottom_container.grid(row=3, column=0, padx=10, pady=10, sticky="w")
+        self.output_label = ttk.Label(bottom_container, text=f"Output Goes Here:")
+        self.output_label.pack()
     def setup_gauges(self):
         """Updates the configuration of all gauges based on the app's state."""
         self.gauges.clear()
@@ -337,7 +340,6 @@ class ObdPro:
         self.names = []
         self.queryReferences = []
         self.queryOutput = [0] * 10  # Initializing with zeroes
-
     def connect(self):
         while True:
             try:
