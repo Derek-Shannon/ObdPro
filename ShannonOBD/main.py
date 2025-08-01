@@ -13,12 +13,15 @@ class MainScreen(tk.Frame):
         self.gauges = []
         self.gauges_index_in_data_list = []
         self.simulation_id = None
+        self.images = []
+        self.labels = []
         self.setup_ui()
         
         self.query_output = [0] * len(self.app.data_list)
         self.last_query_output = [0] * len(self.app.data_list)
         self.moveTimer = [0] * len(self.app.data_list)
         self.movePower = [0] * len(self.app.data_list)
+        
 
     def setup_ui(self):
         """Sets up the layout of the main screen."""
@@ -28,20 +31,29 @@ class MainScreen(tk.Frame):
         self.rowconfigure(1, weight=1)
 
          # Create a container frame for the settings buttons
-        button_container = tk.Frame(self)
-        button_container.grid(row=0, column=2, sticky="ne", padx=5, pady=5)
+        side_container = tk.Frame(self)
+        side_container.grid(row=0, column=2, sticky="ne", padx=5, pady=5)
 
         # Place the settings buttons within the new container frame
-        settings_button = ttk.Button(button_container, text="⚙️ Settings",command=self.app.show_settings_screen)
+        settings_button = ttk.Button(side_container, width=14, text="⚙️ Settings",command=self.app.show_settings_screen)
         settings_button.pack(pady=5)
         
-        settings_button2 = ttk.Button(button_container, text="⚙️ Settings", command=self.app.show_settings_screen)
-        settings_button2.pack(pady=5)
+        # Button to reset min/max
+        reset_min_max = ttk.Button(side_container, width=14, text="Reset Min/Max", command=self.reset_min_max)
+        reset_min_max.pack(pady=1)
         
-        settings_button3 = ttk.Button(button_container, text="⚙️ Settings", command=self.app.show_settings_screen)
-        settings_button3.pack(pady=5)
         #gif lug warning
-        
+        try:
+            self.images.append(tk.PhotoImage(file="assets/images/lugWarningGrey.png"))
+            self.images.append(tk.PhotoImage(file="assets/images/lugWarning.png"))
+            self.images.append(tk.PhotoImage(file="assets/images/lugWarningGreen.png"))
+            
+            # Create a Label widget to display the image
+            self.labels.append(tk.Label(side_container, image=self.images[1]))
+            self.labels[0].pack(padx=1, pady=1)
+            
+        except tk.TclError:
+            print("Error loading image. Make sure 'my_image.gif' exists and is a valid GIF file.")
         
     def setup_gauges(self):
         """Updates the configuration of all gauges based on the app's state."""
@@ -62,6 +74,9 @@ class MainScreen(tk.Frame):
             row = i // 2
             col = i % 2
             gauge.grid(row=row, column=col, padx=0, pady=0, sticky="nsew")
+    def reset_min_max(self):
+        for gauge in self.gauges:
+            gauge.resetMinMax()
     def update_gauges(self, values):
         for index in range(len(self.gauges)):
             self.gauges[index].set_value(values[self.gauges_index_in_data_list[index]])
@@ -80,10 +95,28 @@ class MainScreen(tk.Frame):
         self.last_query_output = new_query_output
         self.query_output = new_query_output
         self.update_gauges(self.query_output)
+        self.check_lug_warning()
         
         # Call this function again after 100 milliseconds
         self.simulation_id = self.after(100, self.simulate_data)
-    
+    def check_lug_warning(self):
+        engine_load = 0
+        rpm = 0
+        for index in range(len(self.app.data_list)):
+            if self.app.data_list[index].name == "Rpm":
+                rpm = self.query_output[index]
+            if self.app.data_list[index].name == "Engine_Load":
+                engine_load = self.query_output[index]
+        #lugging
+        if engine_load>30 and rpm<2000:
+            self.labels[0].configure(image=self.images[1])
+        #coasting
+        elif engine_load<25 and rpm<2500 and rpm>1800:
+            self.labels[0].configure(image=self.images[2])
+        else:
+            self.labels[0].configure(image=self.images[0])
+        #print("Engine_load: "+str(engine_load), "RPM: "+str(rpm))
+        
     def start_simulation(self):
         """Starts the data simulation."""
         self.setup_gauges()
@@ -106,7 +139,6 @@ class Data:
         red: int = 0,
         min_value: int = 0,
         max_value: int = 100,
-        active: bool = False
     ):
         self.name = name
         self.query_reference = query_reference
@@ -117,7 +149,6 @@ class Data:
         self.red = red
         self.min_value = min_value
         self.max_value = max_value
-        self.active = active
     def to_gauge_params(self):
         #Converts Data attributes to a dictionary compatible with Gauge initialization.
         return {
@@ -143,6 +174,7 @@ class SettingsScreen(tk.Frame):
         """Sets up the layout of the settings screen."""
         self.columnconfigure(0, weight=1)
         self.columnconfigure(1, weight=1)
+        self.columnconfigure(2, weight=1)
         
         # Dropdown options from the App's configs
         options = []
@@ -159,10 +191,12 @@ class SettingsScreen(tk.Frame):
             combobox.grid(row=i, column=1, padx=10, pady=10, sticky="w")
             self.comboboxes.append(combobox)
 
+        # Button to enable random numbers
+        save_button = ttk.Button(self, text="Save & Back", command=self.save_and_back)
+        save_button.grid(row=4, column=0, columnspan=2, pady=20)
         # Button to save settings and go back
         save_button = ttk.Button(self, text="Save & Back", command=self.save_and_back)
         save_button.grid(row=4, column=0, columnspan=2, pady=20)
-        
     def update_comboboxes(self):
         """Sets the current value of the comboboxes based on the app's state."""
         for i, combobox in enumerate(self.comboboxes):
@@ -182,6 +216,7 @@ class App(tk.Tk):
         super().__init__()
         self.title("Shannon's Obd Pro")
         self.geometry("480x320")
+        self.script_dir = os.path.dirname(os.path.abspath(__file__))
 
         # Initial selection for the four gauges(should be changeable in future)
         self.gauge_type_selection = ["Spark_adv", "Rpm", "Engine_Load", "Intake_Temp"]
@@ -194,6 +229,9 @@ class App(tk.Tk):
         self.main_screen = None
         self.settings_screen = None
         
+        #used to disable Test Mode
+        self.inTestMode = True
+        
         #get data from Json
         self.data_list = []
         self.get_json_data()
@@ -203,8 +241,7 @@ class App(tk.Tk):
 
     def get_json_data(self):
         # Get the directory where the current script is located
-        script_dir = os.path.dirname(os.path.abspath(__file__))
-        json_file_path = os.path.join(script_dir, 'input_data.json')
+        json_file_path = os.path.join(self.script_dir, 'assets/data/input_data.json')
 
         # Load the JSON data
         with open(json_file_path, 'r', encoding="utf-8") as file:
@@ -227,7 +264,7 @@ class App(tk.Tk):
         ]
         
         #load saves
-        saves_json_path = os.path.join(script_dir, 'save_data.json')
+        saves_json_path = os.path.join(self.script_dir, 'assets/data/save_data.json')
         try:
             with open(saves_json_path, 'r', encoding="utf-8") as file:
                 content = file.read().strip()
@@ -237,14 +274,15 @@ class App(tk.Tk):
                 else:
                     json_data = json.loads(content)
                     self.gauge_type_selection = json_data['gauge_type_selection']
+                    self.inTestMode = json_data['inTestMode']
         except FileNotFoundError:
             print(f"Error: The file {saves_json_path} was not found.")
     def save_json_data(self):
-        script_dir = os.path.dirname(os.path.abspath(__file__))
-        saves_json_path = os.path.join(script_dir, 'save_data.json')
+        saves_json_path = os.path.join(self.script_dir, 'assets/data/save_data.json')
         #save data
         formatted_save_data = {
-            "gauge_type_selection": self.gauge_type_selection
+            "gauge_type_selection": self.gauge_type_selection,
+            "inTestMode": self.inTestMode
         }
         print(formatted_save_data)
         with open(saves_json_path, 'w') as json_file:
@@ -275,6 +313,56 @@ class App(tk.Tk):
         self.settings_screen.update_comboboxes()
         self.settings_screen.pack(fill="both", expand=True)
 
+#not used yet
+class ObdPro:
+    def __init__(self):
+        self.port = "/dev/ttyUSB0"
+        self.connection = None
+        self.connect()
+
+        self.names = []
+        self.queryReferences = []
+        self.queryOutput = [0] * 10  # Initializing with zeroes
+
+    def connect(self):
+        while True:
+            try:
+                # Attempt to connect to the OBD-II device
+                self.connection = obd.OBD(self.port)  # Adjust port for Windows
+                if self.connection.is_connected():
+                    print("Connected to OBD-II device.")
+                    break
+                else:
+                    print("Not connected, retrying...")
+            except Exception as e:
+                print(f"Error connecting: {e}, retrying...")
+            time.sleep(2)
+
+    def addValue(self, name: str, queryReference):
+        self.names.append(name)
+        self.queryReferences.append(queryReference)
+
+    def convert_to_standard_units(self, index, value):
+        if self.names[index] == "Speed":
+            return int(value * 0.621371)
+        elif self.names[index] in ["Intake_Temp", "Ambiant_Temp", "Coolant_temp"]:
+            return int(value * 9 / 5 + 32)
+        elif self.names[index] == "MAF":
+            return int(value * 0.132277)
+        return int(value)
+
+    def _getDataString(self):
+        for i, cmd in enumerate(self.queryReferences):
+            result = self.connection.query(cmd)
+            if result is None or result.is_null():
+                self.queryOutput[i] = 0
+            else:
+                value = result.value.magnitude if hasattr(result.value, 'magnitude') else result.value
+                self.queryOutput[i] = self.convert_to_standard_units(i, value)
+        return "   ".join(map(str, self.queryOutput))
+
+    def getQueryOutput(self):
+        return self.queryOutput
 
 if __name__ == "__main__":
     app = App()

@@ -1,0 +1,9 @@
+{
+    "gauge_type_selection": [
+        "Spark_adv",
+        "Rpm",
+        "Engine_Load",
+        "Intake_Temp"
+    ],
+    "inTestMode": true
+}
