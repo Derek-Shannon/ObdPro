@@ -52,7 +52,7 @@ class ObdPro:
                 else:
                     print("Not connected, retrying...")
             except Exception as e:
-                print(f"Error connecting: {e}, retrying...")
+                print(f"Error connecting: {e}, retrying...")d
             time.sleep(2)
 
     def addValue(self, name: str, queryReference):
