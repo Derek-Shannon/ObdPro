@@ -23,14 +23,6 @@ class CarDashboard(tk.Tk):
         self.gauges.append(gauge)
         gauge.grid(column=len(self.gauges)-(len(self.gauges)-1)%3-1, row=len(self.gauges)%3+2)
 
-    def get_gauge_color(self, value, min_value, max_value):
-        if value < min_value:
-            return "blue"
-        elif value > max_value:
-            return "red"
-        else:
-            return "green"
-
     def update_gauge(self, values):
         for index in range(len(self.gauges)):
             self.gauges[index].set_value(values[index])
