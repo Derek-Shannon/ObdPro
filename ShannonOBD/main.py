@@ -2,7 +2,7 @@
 
 import tkinter as tk
 from tkinter import ttk
-import random, math, Gauge, os, obd, json
+import random, math, Gauge, os, obd, json, time
 
 
 class MainScreen(tk.Frame):
@@ -168,6 +168,7 @@ class SettingsScreen(tk.Frame):
         super().__init__(parent)
         self.app = app_instance
         self.comboboxes = []
+        self.debug_button = None
         self.setup_ui()
 
     def setup_ui(self):
@@ -192,11 +193,23 @@ class SettingsScreen(tk.Frame):
             self.comboboxes.append(combobox)
 
         # Button to enable random numbers
-        save_button = ttk.Button(self, text="Save & Back", command=self.save_and_back)
-        save_button.grid(row=4, column=0, columnspan=2, pady=20)
+        if self.app.inDebugMode:
+            self.debug_button = ttk.Button(self, text="Disable Debug", command=self.on_click_debug_button)
+        else:
+            self.debug_button = ttk.Button(self, text="Enable Debug", command=self.on_click_debug_button)
+        self.debug_button.grid(row=4, column=0, pady=20)
         # Button to save settings and go back
         save_button = ttk.Button(self, text="Save & Back", command=self.save_and_back)
         save_button.grid(row=4, column=0, columnspan=2, pady=20)
+    def on_click_debug_button(self):
+        if self.app.inDebugMode:
+            self.debug_button.config(text="Enable Debug")
+            self.app.inDebugMode = False
+            print("Disabled")
+        else:
+            self.debug_button.config(text="Disable Debug")
+            self.app.inDebugMode = True
+            print("Enabled")
     def update_comboboxes(self):
         """Sets the current value of the comboboxes based on the app's state."""
         for i, combobox in enumerate(self.comboboxes):
@@ -209,6 +222,7 @@ class SettingsScreen(tk.Frame):
         #save
         self.app.save_json_data()
         self.app.show_main_screen()
+        print("Saved")
 
 class App(tk.Tk):
     """The main application window."""
@@ -230,7 +244,7 @@ class App(tk.Tk):
         self.settings_screen = None
         
         #used to disable Test Mode
-        self.inTestMode = True
+        self.inDebugMode = True
         
         #get data from Json
         self.data_list = []
@@ -274,7 +288,7 @@ class App(tk.Tk):
                 else:
                     json_data = json.loads(content)
                     self.gauge_type_selection = json_data['gauge_type_selection']
-                    self.inTestMode = json_data['inTestMode']
+                    self.inDebugMode = json_data['inDebugMode']
         except FileNotFoundError:
             print(f"Error: The file {saves_json_path} was not found.")
     def save_json_data(self):
@@ -282,7 +296,7 @@ class App(tk.Tk):
         #save data
         formatted_save_data = {
             "gauge_type_selection": self.gauge_type_selection,
-            "inTestMode": self.inTestMode
+            "inDebugMode": self.inDebugMode
         }
         print(formatted_save_data)
         with open(saves_json_path, 'w') as json_file:
