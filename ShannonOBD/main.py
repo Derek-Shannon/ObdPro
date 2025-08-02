@@ -2,7 +2,7 @@
 
 import tkinter as tk
 from tkinter import ttk
-import random, math, Gauge, os, obd, json, time
+import random, math, Gauge, os, obd, json, time, threading
 
 
 class MainScreen(tk.Frame):
@@ -22,6 +22,8 @@ class MainScreen(tk.Frame):
         self.last_query_output = [0] * len(self.app.data_list)
         self.moveTimer = [0] * len(self.app.data_list)
         self.movePower = [0] * len(self.app.data_list)
+        
+        self.fps = 10
 
     def setup_ui(self):
         """Sets up the layout of the main screen."""
@@ -83,7 +85,7 @@ class MainScreen(tk.Frame):
     def update_gauges(self, values):
         for index in range(len(self.gauges)):
             self.gauges[index].set_value(values[self.gauges_index_in_data_list[index]])
-    def simulate_data(self):
+    def simulate_test_data(self):
         """Simulates data and updates the gauges periodically."""
         new_query_output = []
         for index in range(len(self.app.data_list)):
@@ -101,7 +103,7 @@ class MainScreen(tk.Frame):
         self.check_lug_warning()
         
         # Call this function again after 100 milliseconds
-        self.simulation_id = self.after(100, self.simulate_data)
+        self.simulation_id = self.after(int(1000/self.fps), self.simulate_test_data)
     def check_lug_warning(self):
         engine_load = 0
         rpm = 0
@@ -119,17 +121,29 @@ class MainScreen(tk.Frame):
         else:
             self.labels[0].configure(image=self.images[0])
         #print("Engine_load: "+str(engine_load), "RPM: "+str(rpm))
+    def simulate_data(self):
+        if self.app.obdPro.connected:
+            self.app.obdPro.update_data()
+            self.query_output = self.app.obdPro.getQueryOutput()
+            self.update_gauges(self.query_output)
+            self.check_lug_warning()
         
+        # Call this function again after 100 milliseconds
+        self.simulation_id = self.after(int(1000/self.fps), self.simulate_data)
     def start_simulation(self):
         """Starts the data simulation."""
         self.setup_gauges()
-        self.simulate_data()
+        if self.app.inDebugMode:
+            self.simulate_test_data()
+        else:
+            self.simulate_data()
 
     def stop_simulation(self):
         """Stops the data simulation."""
         if self.simulation_id:
             self.after_cancel(self.simulation_id)
             self.simulation_id = None
+            
 class Data:
     def __init__(
         self,
@@ -255,7 +269,18 @@ class App(tk.Tk):
         
         # Start by showing the main screen
         self.show_main_screen()
-
+        
+        self.obdPro = None
+    def set_output_text(self, text):
+        if self.main_screen == None:
+            print("Error! No Display available")
+        else:
+            self.main_screen.output_label.config(text=text)
+        
+    def start_obd(self):
+        self.obdPro = ObdPro(self)
+        for data in self.data_list:
+            self.obdPro.addValue(data.name, data.query_reference)
     def get_json_data(self):
         # Get the directory where the current script is located
         json_file_path = os.path.join(self.script_dir, 'assets/data/input_data.json')
@@ -316,6 +341,8 @@ class App(tk.Tk):
             self.main_screen = MainScreen(self.container, self)
         
         self.main_screen.pack(fill="both", expand=True)
+        if not self.inDebugMode:
+            self.start_obd()
         self.main_screen.start_simulation()
 
     def show_settings_screen(self):
@@ -332,27 +359,37 @@ class App(tk.Tk):
 
 #not used yet
 class ObdPro:
-    def __init__(self):
+    def __init__(self, app):
+        self.app = app
         self.port = "/dev/ttyUSB0"
         self.connection = None
-        self.connect()
+        self.connected = False
+        
+        #connect to car
+        thread = threading.Thread(target=self.connect)
+        thread.start()
 
         self.names = []
         self.queryReferences = []
         self.queryOutput = [0] * 10  # Initializing with zeroes
+        
+        
     def connect(self):
         while True:
+            if self.app.inDebugMode:
+                break
             try:
                 # Attempt to connect to the OBD-II device
                 self.connection = obd.OBD(self.port)  # Adjust port for Windows
                 if self.connection.is_connected():
-                    print("Connected to OBD-II device.")
+                    self.app.set_output_text("Connected to Vehicle!")
                     break
                 else:
-                    print("Not connected, retrying...")
+                    self.app.set_output_text("Not connected, retrying...")
             except Exception as e:
-                print(f"Error connecting: {e}, retrying...")
+                self.app.set_output_text(f"Error connecting: {e}, retrying...")
             time.sleep(2)
+        self.connected = True
 
     def addValue(self, name: str, queryReference):
         self.names.append(name)
@@ -367,7 +404,7 @@ class ObdPro:
             return int(value * 0.132277)
         return int(value)
 
-    def _getDataString(self):
+    def update_data(self):
         for i, cmd in enumerate(self.queryReferences):
             result = self.connection.query(cmd)
             if result is None or result.is_null():
