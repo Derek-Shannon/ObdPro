@@ -5,5 +5,5 @@
         "Engine_Load",
         "Intake_Temp"
     ],
-    "inDebugMode": false
+    "inDebugMode": true
 }
