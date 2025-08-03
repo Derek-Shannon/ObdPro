@@ -262,23 +262,25 @@ class App(tk.Tk):
         
         #used to disable Test Mode
         self.inDebugMode = True
+        self.message_count = 0
         
         #get data from Json
         self.data_list = []
         self.get_json_data()
         
+        self.obdPro = ObdPro(self)
         # Start by showing the main screen
         self.show_main_screen()
         
-        self.obdPro = None
     def set_output_text(self, text):
+        self.message_count += 1
         if self.main_screen == None:
             print("Error! No Display available")
         else:
-            self.main_screen.output_label.config(text=text)
+            self.main_screen.output_label.config(text=f"{self.message_count}: {text}")
         
     def start_obd(self):
-        self.obdPro = ObdPro(self)
+        self.obdPro.start_connection()
         for data in self.data_list:
             self.obdPro.addValue(data.name, data.query_reference)
     def get_json_data(self):
@@ -341,6 +343,8 @@ class App(tk.Tk):
             self.main_screen = MainScreen(self.container, self)
         
         self.main_screen.pack(fill="both", expand=True)
+        #clear output text
+        self.set_output_text("")
         if not self.inDebugMode:
             self.start_obd()
         self.main_screen.start_simulation()
@@ -364,16 +368,15 @@ class ObdPro:
         self.port = "/dev/ttyUSB0"
         self.connection = None
         self.connected = False
-        
-        #connect to car
-        thread = threading.Thread(target=self.connect)
-        thread.start()
 
         self.names = []
         self.queryReferences = []
         self.queryOutput = [0] * 10  # Initializing with zeroes
         
-        
+    def start_connection(self):
+        #connect to car
+        thread = threading.Thread(target=self.connect)
+        thread.start()
     def connect(self):
         while True:
             if self.app.inDebugMode:
