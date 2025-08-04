@@ -414,6 +414,8 @@ class ObdPro:
             return int(value * 9 / 5 + 32)
         elif self.names[index] == "MAF":
             return int(value * 0.132277)
+        elif self.names[index] == "Boost":
+            return int(value * 0.1450377377)
         return int(value)
 
     def update_data(self):
