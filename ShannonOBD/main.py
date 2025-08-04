@@ -244,23 +244,34 @@ class SettingsScreen(tk.Frame):
             combobox.current(i)  # Set initial selection
             combobox.grid(row=i, column=1, padx=10, pady=10, sticky="w")
             self.comboboxes.append(combobox)
-
-        # Button to enable random numbers
-        self.debug_button = ttk.Button(self, text="Disable Debug" if self.app.inDebugMode else "Enable Debug", command=self.on_click_debug_button)
-        self.debug_button.grid(row=4, column=0, pady=10)
-        
-        # Button to toggle theme
-        self.theme_button = ttk.Button(self, text="Toggle Dark Mode", command=self.app.toggle_theme)
-        self.theme_button.grid(row=5, column=0, pady=10)
-        
-        #refresh car connection button
-        self.reconnect_button = ttk.Button(self, text="Reconnect", command=self.app.obdPro.start_connection)
-        self.reconnect_button.grid(row=6, column=0, pady=10)
-        
+            
         # Button to save settings and go back
         save_button = ttk.Button(self, text="Save & Back", command=self.save_and_back)
-        save_button.grid(row=4, column=0, columnspan=2, pady=10)
-
+        save_button.grid(row=4, column=0, columnspan=2, pady=5)
+        
+        
+        self.bottom_container = ttk.Frame(self, border=2,borderwidth=2,relief=tk.SUNKEN)
+        self.bottom_container.grid(row=5, column=0, columnspan=2, padx=15, pady=10, sticky="w")
+        
+        label = ttk.Label(self.bottom_container, text=f"Extras: ")
+        label.grid(row=0,column=0,rowspan=2, padx=10, pady=10)
+        # Button to enable random numbers
+        self.debug_button = ttk.Button(self.bottom_container, text="Disable Debug" if self.app.inDebugMode else "Enable Debug", command=self.on_click_debug_button)
+        self.debug_button.grid(row=0,column=1, pady=10)
+        
+        # Button to toggle theme
+        self.theme_button = ttk.Button(self.bottom_container, text="Dark Mode", command=self.app.toggle_theme)
+        self.theme_button.grid(row=1,column=1, pady=10)
+        
+        #refresh car connection button
+        self.reconnect_button = ttk.Button(self.bottom_container, text="Reconnect", command=self.app.obdPro.start_connection)
+        self.reconnect_button.grid(row=0,column=2)
+        
+        #Fullscreen button
+        self.fullscreen_button = ttk.Button(self.bottom_container, text="Toggle Fullscreen", command=self.app.toggle_fullscreen)
+        self.fullscreen_button.grid(row=1,column=2)
+        
+        
     def on_click_debug_button(self):
         if self.app.inDebugMode:
             self.debug_button.config(text="Enable Debug")
@@ -284,9 +295,9 @@ class SettingsScreen(tk.Frame):
         style.configure("TButton", background=bg_color)
         
         if theme == 'dark':
-            self.theme_button.config(text="Toggle Light Mode")
+            self.theme_button.config(text="Light Mode")
         else:
-            self.theme_button.config(text="Toggle Dark Mode")
+            self.theme_button.config(text="Dark Mode")
     
     def update_comboboxes(self):
         """Sets the current value of the comboboxes based on the app's state."""
@@ -445,6 +456,9 @@ class App(tk.Tk):
     def toggle_theme(self):
         self.inDarkMode = not self.inDarkMode
         self.set_theme()
+    def toggle_fullscreen(self):
+        is_fullscreen = self.attributes('-fullscreen')
+        self.attributes('-fullscreen', not is_fullscreen)
 
 class ObdPro:
     def __init__(self, app):
