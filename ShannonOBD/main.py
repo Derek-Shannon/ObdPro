@@ -432,27 +432,34 @@ class ObdPro:
 
 class Output:
     def __init__(self, app):
-        self.DWELL_TIME = 3
+        self.DWELL_TIME = 5
         self.TEXT_ROWS = 3
         
         self.app = app
         
         self.text_list = []
-        self.last_text_time = time.time()-self.DWELL_TIME-1
+        self.last_text_time = []
         self.message_count = 0
         
     def add(self, text):
         self.message_count += 1
         self.text_list.insert(0, str(self.message_count)+": "+text)
-        self.last_text_time = time.time()
+        self.last_text_time.insert(0, time.time())
         if len(self.text_list) > self.TEXT_ROWS:
             self.text_list.pop()
     def update(self):
         if len(self.text_list) == 0:
             return
-        if self.last_text_time+self.DWELL_TIME < time.time():
+        
+        #removal of texts
+        remove_quantity = 0
+        for a_time in self.last_text_time:
+            if a_time+self.DWELL_TIME < time.time():
+                remove_quantity +=1
+        for i in range(remove_quantity):
             self.text_list.pop()
-            self.last_text_time = time.time()
+            self.last_text_time.pop()
+        
         self.__display()
     def __display(self):
         out = ""
