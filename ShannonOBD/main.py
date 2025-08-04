@@ -1,9 +1,7 @@
 #ObdPro V2 with settings
-
 import tkinter as tk
 from tkinter import ttk
-import random, math, Gauge, os, obd, json, time, threading
-
+import random, math, os, obd, json, time, threading, Gauge
 
 class MainScreen(tk.Frame):
     """The main dashboard screen with 4 gauges."""
@@ -24,6 +22,7 @@ class MainScreen(tk.Frame):
         self.movePower = [0] * len(self.app.data_list)
         
         self.fps = 10
+        self.set_theme(self.app.current_theme)
 
     def setup_ui(self):
         """Sets up the layout of the main screen."""
@@ -32,17 +31,17 @@ class MainScreen(tk.Frame):
         self.rowconfigure(0, weight=1)
         self.rowconfigure(1, weight=1)
 
-         # Create a container frame for the settings buttons
-        side_container = tk.Frame(self)
-        side_container.grid(row=0, column=2, rowspan=2,sticky="ne", padx=0, pady=5)
+        # Create a container frame for the settings buttons
+        self.side_container = tk.Frame(self)
+        self.side_container.grid(row=0, column=2, rowspan=2,sticky="ne", padx=0, pady=5)
 
         # Place the settings buttons within the new container frame
-        settings_button = ttk.Button(side_container, width=14, text="⚙️ Settings",command=self.app.show_settings_screen)
-        settings_button.pack(pady=5)
+        self.settings_button = ttk.Button(self.side_container, width=14, text="⚙️ Settings",command=self.app.show_settings_screen)
+        self.settings_button.pack(pady=5)
         
         # Button to reset min/max
-        reset_min_max = ttk.Button(side_container, width=14, text="Reset Min/Max", command=self.reset_min_max)
-        reset_min_max.pack(pady=1)
+        self.reset_min_max_button = ttk.Button(self.side_container, width=14, text="Reset Min/Max", command=self.reset_min_max)
+        self.reset_min_max_button.pack(pady=1)
         
         #gif lug warning
         try:
@@ -51,19 +50,46 @@ class MainScreen(tk.Frame):
             self.images.append(tk.PhotoImage(file="assets/images/lugWarningGreen.png"))
             
             # Create a Label widget to display the image
-            self.labels.append(tk.Label(side_container, image=self.images[1]))
+            self.labels.append(tk.Label(self.side_container, image=self.images[1]))
             self.labels[0].pack(padx=0, pady=1)
             
         except tk.TclError:
             print("Error loading image. Make sure 'my_image.gif' exists and is a valid GIF file.")
-        bottom_container = tk.Frame(self)
-        bottom_container.grid(row=3, column=0, padx=15, pady=10, sticky="w")
-        self.output_label = ttk.Label(bottom_container, text=f"")
+        
+        self.bottom_container = tk.Frame(self)
+        self.bottom_container.grid(row=3, column=0, padx=15, pady=10, sticky="w")
+        self.output_label = ttk.Label(self.bottom_container, text=f"")
         self.output_label.pack()
+
+    def set_theme(self, theme):
+        """Applies the current theme to the MainScreen and all its widgets."""
+        bg_color = self.app.theme[theme]['frame_bg']
+        text_color = self.app.theme[theme]['text']
+        
+        self.configure(bg=bg_color)
+        
+        # Configure styles for ttk widgets
+        style = ttk.Style()
+        style.configure("TFrame", background=bg_color)
+        style.configure("TLabel", background=bg_color, foreground=text_color)
+        style.configure("TButton", background=bg_color)
+        
+        self.side_container.configure(bg=bg_color)
+        self.bottom_container.configure(bg=bg_color)
+        self.output_label.configure(background=bg_color, foreground=text_color)
+        
+         # This is the new line you need to add or update
+        if self.labels:
+            self.labels[0].configure(background=self.side_container.cget("bg"))
+        
+        for gauge in self.gauges:
+            gauge.set_theme(theme)
+
     def setup_gauges(self):
         """Updates the configuration of all gauges based on the app's state."""
         self.gauges.clear()
         self.gauges_index_in_data_list.clear()
+        
         for i in range(4):
             gauge_name = self.app.gauge_type_selection[i]
             
@@ -73,18 +99,24 @@ class MainScreen(tk.Frame):
                 if data_object.name == gauge_name:
                     index_of_gauge = j
                     break
+            
             gauge = Gauge.Gauge(self, **self.app.data_list[index_of_gauge].to_gauge_params())
             self.gauges.append(gauge)
             self.gauges_index_in_data_list.append(index_of_gauge)
             row = i // 2
             col = i % 2
             gauge.grid(row=row, column=col, padx=0, pady=0, sticky="nsew")
+        
+        self.set_theme(self.app.current_theme)
+
     def reset_min_max(self):
         for gauge in self.gauges:
             gauge.resetMinMax()
+    
     def update_gauges(self, values):
         for index in range(len(self.gauges)):
             self.gauges[index].set_value(values[self.gauges_index_in_data_list[index]])
+    
     def simulate_test_data(self):
         """Simulates data and updates the gauges periodically."""
         new_query_output = []
@@ -105,6 +137,7 @@ class MainScreen(tk.Frame):
         self.app.output.update()
         # Call this function again after 100 milliseconds
         self.simulation_id = self.after(int(1000/self.fps), self.simulate_test_data)
+    
     def check_lug_warning(self):
         engine_load = 0
         rpm = 0
@@ -121,7 +154,7 @@ class MainScreen(tk.Frame):
             self.labels[0].configure(image=self.images[2])
         else:
             self.labels[0].configure(image=self.images[0])
-        #print("Engine_load: "+str(engine_load), "RPM: "+str(rpm))
+            
     def simulate_data(self):
         if self.app.obdPro.connected:
             self.app.obdPro.update_data()
@@ -132,6 +165,7 @@ class MainScreen(tk.Frame):
         self.app.output.update()
         # Call this function again after 100 milliseconds
         self.simulation_id = self.after(int(1000/self.fps), self.simulate_data)
+    
     def start_simulation(self):
         """Starts the data simulation."""
         self.setup_gauges()
@@ -187,8 +221,8 @@ class SettingsScreen(tk.Frame):
         super().__init__(parent)
         self.app = app_instance
         self.comboboxes = []
-        self.debug_button = None
         self.setup_ui()
+        self.set_theme(self.app.current_theme)
 
     def setup_ui(self):
         """Sets up the layout of the settings screen."""
@@ -212,18 +246,21 @@ class SettingsScreen(tk.Frame):
             self.comboboxes.append(combobox)
 
         # Button to enable random numbers
-        if self.app.inDebugMode:
-            self.debug_button = ttk.Button(self, text="Disable Debug", command=self.on_click_debug_button)
-        else:
-            self.debug_button = ttk.Button(self, text="Enable Debug", command=self.on_click_debug_button)
+        self.debug_button = ttk.Button(self, text="Disable Debug" if self.app.inDebugMode else "Enable Debug", command=self.on_click_debug_button)
         self.debug_button.grid(row=4, column=0, pady=10)
+        
+        # Button to toggle theme
+        self.theme_button = ttk.Button(self, text="Toggle Dark Mode", command=self.app.toggle_theme)
+        self.theme_button.grid(row=5, column=0, pady=10)
         
         #refresh car connection button
         self.reconnect_button = ttk.Button(self, text="Reconnect", command=self.app.obdPro.start_connection)
-        self.reconnect_button.grid(row=5, column=0, pady=10)
+        self.reconnect_button.grid(row=6, column=0, pady=10)
+        
         # Button to save settings and go back
         save_button = ttk.Button(self, text="Save & Back", command=self.save_and_back)
-        save_button.grid(row=4, column=0, columnspan=2, pady=20)
+        save_button.grid(row=4, column=0, columnspan=2, pady=10)
+
     def on_click_debug_button(self):
         if self.app.inDebugMode:
             self.debug_button.config(text="Enable Debug")
@@ -233,6 +270,24 @@ class SettingsScreen(tk.Frame):
             self.debug_button.config(text="Disable Debug")
             self.app.inDebugMode = True
             print("Enabled")
+    
+    def set_theme(self, theme):
+        bg_color = self.app.theme[theme]['frame_bg']
+        text_color = self.app.theme[theme]['text']
+        
+        self.configure(bg=bg_color)
+        
+        # Configure styles for ttk widgets
+        style = ttk.Style()
+        style.configure("TFrame", background=bg_color)
+        style.configure("TLabel", background=bg_color, foreground=text_color)
+        style.configure("TButton", background=bg_color)
+        
+        if theme == 'dark':
+            self.theme_button.config(text="Toggle Light Mode")
+        else:
+            self.theme_button.config(text="Toggle Dark Mode")
+    
     def update_comboboxes(self):
         """Sets the current value of the comboboxes based on the app's state."""
         for i, combobox in enumerate(self.comboboxes):
@@ -255,49 +310,72 @@ class App(tk.Tk):
         self.geometry("480x320")
         self.script_dir = os.path.dirname(os.path.abspath(__file__))
 
-        # Initial selection for the four gauges(should be changeable in future)
+        # Theme definitions
+        self.theme = {
+            'light': {
+                'frame_bg': 'lightgrey',
+                'canvas_bg': 'lightgrey',
+                'inner_bg': 'white',
+                'text': 'black',
+                'outline': '#343434'
+            },
+            'dark': {
+                'frame_bg': '#2C2C2C',
+                'canvas_bg': '#2C2C2C',
+                'inner_bg': '#1E1E1E',
+                'text': '#F0F0F0',
+                'outline': '#FFFFFF'
+            }
+        }
+        
         self.gauge_type_selection = ["Spark_adv", "Rpm", "Engine_Load", "Intake_Temp"]
         
-        # Create a container frame to manage screen switching
         self.container = tk.Frame(self)
         self.container.pack(fill="both", expand=True)
 
-        # Screen frames are initially None, they will be created as needed
         self.main_screen = None
         self.settings_screen = None
         
         self.output = Output(self)
         
-        #used to disable Test Mode
         self.inDebugMode = True
+        self.inDarkMode = False
+        self.current_theme = 'light'
         
-        #get data from Json
-        self.data_list = []
         self.get_json_data()
         
         self.obdPro = ObdPro(self)
-        # Start by showing the main screen
-        self.show_main_screen()
         
+        self.show_main_screen()
+        self.set_theme()
+
+    def set_theme(self):
+        """Updates the theme for the entire app."""
+        self.current_theme = 'dark' if self.inDarkMode else 'light'
+        bg_color = self.theme[self.current_theme]['frame_bg']
+        self.configure(bg=bg_color)
+        self.container.configure(bg=bg_color)
+        
+        if self.main_screen:
+            self.main_screen.set_theme(self.current_theme)
+        if self.settings_screen:
+            self.settings_screen.set_theme(self.current_theme)
+            
     def set_output_text(self, text):
         if self.main_screen == None:
             print("Error! No Display available")
         else:
             self.output.add(text)
-    #should only be called once to load gauges
+            
     def start_obd(self):
         self.obdPro.start_connection()
         for data in self.data_list:
             self.obdPro.addValue(data.name, data.query_reference)
+            
     def get_json_data(self):
-        # Get the directory where the current script is located
         json_file_path = os.path.join(self.script_dir, 'assets/data/input_data.json')
-
-        # Load the JSON data
         with open(json_file_path, 'r', encoding="utf-8") as file:
             json_data = json.load(file)
-
-        # Convert JSON to Data objects
         self.data_list = [
             Data(
                 name=item["name"],
@@ -312,36 +390,33 @@ class App(tk.Tk):
             )
             for item in json_data
         ]
-        
-        #load saves
         saves_json_path = os.path.join(self.script_dir, 'assets/data/save_data.json')
         try:
             with open(saves_json_path, 'r', encoding="utf-8") as file:
                 content = file.read().strip()
                 if not content:
                     print("File content is empty.")
-                    json_data = {}  # Default to an empty dictionary
+                    json_data = {}
                 else:
                     json_data = json.loads(content)
                     self.gauge_type_selection = json_data['gauge_type_selection']
                     self.inDebugMode = json_data['inDebugMode']
+                    self.inDarkMode = json_data['inDarkMode']
         except FileNotFoundError:
             print(f"Error: The file {saves_json_path} was not found.")
+            
     def save_json_data(self):
         saves_json_path = os.path.join(self.script_dir, 'assets/data/save_data.json')
-        #save data
         formatted_save_data = {
             "gauge_type_selection": self.gauge_type_selection,
-            "inDebugMode": self.inDebugMode
+            "inDebugMode": self.inDebugMode,
+            "inDarkMode": self.inDarkMode
         }
         print(formatted_save_data)
         with open(saves_json_path, 'w') as json_file:
-            # Use json.dump() to write the data to the file
-            # indent=4 makes the output pretty-printed and easy to read
             json.dump(formatted_save_data, json_file, indent=4)
         
     def show_main_screen(self):
-        """Shows the main screen and hides the settings screen."""
         if self.settings_screen:
             self.settings_screen.pack_forget()
             
@@ -349,12 +424,13 @@ class App(tk.Tk):
             self.main_screen = MainScreen(self.container, self)
         
         self.main_screen.pack(fill="both", expand=True)
+        self.set_theme()
+        
         if not self.inDebugMode:
             self.start_obd()
         self.main_screen.start_simulation()
 
     def show_settings_screen(self):
-        """Shows the settings screen and hides the main screen."""
         if self.main_screen:
             self.main_screen.stop_simulation()
             self.main_screen.pack_forget()
@@ -364,6 +440,11 @@ class App(tk.Tk):
         
         self.settings_screen.update_comboboxes()
         self.settings_screen.pack(fill="both", expand=True)
+        self.set_theme()
+    
+    def toggle_theme(self):
+        self.inDarkMode = not self.inDarkMode
+        self.set_theme()
 
 class ObdPro:
     def __init__(self, app):
@@ -371,27 +452,25 @@ class ObdPro:
         self.port = "/dev/ttyUSB0"
         self.connection = None
         self.connected = False
-
         self.names = []
         self.queryReferences = []
-        self.queryOutput = [0] * 10  # Initializing with zeroes
+        self.queryOutput = [0] * 10
         self.thread = threading.Thread(target=self.connect)
         
     def start_connection(self):
-        #connect to car
         if not self.thread.is_alive():
             self.thread = threading.Thread(target=self.connect)
             self.thread.start()
         else:
             self.app.set_output_text("Already Trying to Connect...")
+            
     def connect(self):
         while True:
             if self.app.inDebugMode:
                 break
             self.connected = False
             try:
-                # Attempt to connect to the OBD-II device
-                self.connection = obd.OBD(self.port)  # Adjust port for Windows
+                self.connection = obd.OBD(self.port)
                 if self.connection.is_connected():
                     self.app.set_output_text("Connected to Vehicle!")
                     self.connected = True
@@ -447,11 +526,11 @@ class Output:
         self.last_text_time.insert(0, time.time())
         if len(self.text_list) > self.TEXT_ROWS:
             self.text_list.pop()
+            
     def update(self):
         if len(self.text_list) == 0:
             return
         
-        #removal of texts
         remove_quantity = 0
         for a_time in self.last_text_time:
             if a_time+self.DWELL_TIME < time.time():
@@ -461,6 +540,7 @@ class Output:
             self.last_text_time.pop()
         
         self.__display()
+        
     def __display(self):
         out = ""
         for i in range(self.TEXT_ROWS-len(self.text_list)):
@@ -469,7 +549,6 @@ class Output:
             out += self.text_list[len(self.text_list)-1-i] + "\n"
         out= out[:-1]
         
-        #output command
         self.app.main_screen.output_label.config(text=f"{out}")
         
 if __name__ == "__main__":
