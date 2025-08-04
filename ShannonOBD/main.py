@@ -34,7 +34,7 @@ class MainScreen(tk.Frame):
 
          # Create a container frame for the settings buttons
         side_container = tk.Frame(self)
-        side_container.grid(row=0, column=2, sticky="ne", padx=0, pady=5)
+        side_container.grid(row=0, column=2, rowspan=2,sticky="ne", padx=0, pady=5)
 
         # Place the settings buttons within the new container frame
         settings_button = ttk.Button(side_container, width=14, text="⚙️ Settings",command=self.app.show_settings_screen)
@@ -57,8 +57,8 @@ class MainScreen(tk.Frame):
         except tk.TclError:
             print("Error loading image. Make sure 'my_image.gif' exists and is a valid GIF file.")
         bottom_container = tk.Frame(self)
-        bottom_container.grid(row=3, column=0, padx=10, pady=10, sticky="w")
-        self.output_label = ttk.Label(bottom_container, text=f"Output Goes Here:")
+        bottom_container.grid(row=3, column=0, padx=15, pady=10, sticky="w")
+        self.output_label = ttk.Label(bottom_container, text=f"")
         self.output_label.pack()
     def setup_gauges(self):
         """Updates the configuration of all gauges based on the app's state."""
@@ -102,6 +102,7 @@ class MainScreen(tk.Frame):
         self.update_gauges(self.query_output)
         self.check_lug_warning()
         
+        self.app.output.update()
         # Call this function again after 100 milliseconds
         self.simulation_id = self.after(int(1000/self.fps), self.simulate_test_data)
     def check_lug_warning(self):
@@ -127,7 +128,8 @@ class MainScreen(tk.Frame):
             self.query_output = self.app.obdPro.getQueryOutput()
             self.update_gauges(self.query_output)
             self.check_lug_warning()
-        
+            
+        self.app.output.update()
         # Call this function again after 100 milliseconds
         self.simulation_id = self.after(int(1000/self.fps), self.simulate_data)
     def start_simulation(self):
@@ -264,9 +266,10 @@ class App(tk.Tk):
         self.main_screen = None
         self.settings_screen = None
         
+        self.output = Output(self)
+        
         #used to disable Test Mode
         self.inDebugMode = True
-        self.message_count = 0
         
         #get data from Json
         self.data_list = []
@@ -277,11 +280,10 @@ class App(tk.Tk):
         self.show_main_screen()
         
     def set_output_text(self, text):
-        self.message_count += 1
         if self.main_screen == None:
             print("Error! No Display available")
         else:
-            self.main_screen.output_label.config(text=f"{self.message_count}: {text}")
+            self.output.add(text)
     #should only be called once to load gauges
     def start_obd(self):
         self.obdPro.start_connection()
@@ -347,8 +349,6 @@ class App(tk.Tk):
             self.main_screen = MainScreen(self.container, self)
         
         self.main_screen.pack(fill="both", expand=True)
-        #clear output text
-        self.set_output_text("")
         if not self.inDebugMode:
             self.start_obd()
         self.main_screen.start_simulation()
@@ -365,7 +365,6 @@ class App(tk.Tk):
         self.settings_screen.update_comboboxes()
         self.settings_screen.pack(fill="both", expand=True)
 
-#not used yet
 class ObdPro:
     def __init__(self, app):
         self.app = app
@@ -431,6 +430,41 @@ class ObdPro:
     def getQueryOutput(self):
         return self.queryOutput
 
+class Output:
+    def __init__(self, app):
+        self.DWELL_TIME = 3
+        self.TEXT_ROWS = 3
+        
+        self.app = app
+        
+        self.text_list = []
+        self.last_text_time = time.time()-self.DWELL_TIME-1
+        self.message_count = 0
+        
+    def add(self, text):
+        self.message_count += 1
+        self.text_list.insert(0, str(self.message_count)+": "+text)
+        self.last_text_time = time.time()
+        if len(self.text_list) > self.TEXT_ROWS:
+            self.text_list.pop()
+    def update(self):
+        if len(self.text_list) == 0:
+            return
+        if self.last_text_time+self.DWELL_TIME < time.time():
+            self.text_list.pop()
+            self.last_text_time = time.time()
+        self.__display()
+    def __display(self):
+        out = ""
+        for i in range(self.TEXT_ROWS-len(self.text_list)):
+            out +="\n"
+        for i in range(len(self.text_list)):
+            out += self.text_list[len(self.text_list)-1-i] + "\n"
+        out= out[:-1]
+        
+        #output command
+        self.app.main_screen.output_label.config(text=f"{out}")
+        
 if __name__ == "__main__":
     app = App()
     app.mainloop()

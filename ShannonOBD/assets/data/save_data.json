@@ -1,9 +1,9 @@
 {
     "gauge_type_selection": [
         "Speed",
-        "Rpm",
+        "Spark_adv",
         "Engine_Load",
-        "Boost"
+        "Intake_Temp"
     ],
     "inDebugMode": true
 }

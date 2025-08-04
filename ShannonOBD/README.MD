@@ -7,3 +7,4 @@ Issues and Additions:
    a. Auto clear all after set time
    b. Auto clear when over 3 lines
    c. Feed it what needs to be changed.
+5. Dark mode
