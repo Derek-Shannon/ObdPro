@@ -1,4 +1,8 @@
-#ObdPro V2 with settings
+# ObdPro
+# A customizable, real-time car dashboard application
+# Derek Shannon
+# Version: 2.0
+
 import tkinter as tk
 from tkinter import ttk
 import random, math, os, obd, json, time, threading, Gauge
