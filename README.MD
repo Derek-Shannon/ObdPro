@@ -8,11 +8,31 @@ ObdPro is a Python-based application that is meant to run on a RasberryPi to tur
 
 - **Real-Time Gauges**: Displays up to four live data feeds from your car's sensors simultaneously on a clean, easy-to-read dashboard.
 - **Customizable Gauges**: You can select which parameters (e.g., RPM, speed, engine load) you want to display on each of the four gauges via the settings menu.
+- **Local Saves**: The application automatically saves your last-used gauge selections, theme preference, and other settings. This ensures the app reloads with your personalized configuration, so you don't have to set it up every time you launch it.
 - **Debug Mode**: Don't have a car handy? The app includes a debug mode that simulates random sensor data, allowing you to test the interface without a physical connection.
-- **Theme Switching**: Easily toggle between a light and dark theme to suit your preferences or driving conditions.
 - **Fullscreen Mode**: Maximize the display for a distraction-free view with a dedicated fullscreen toggle.
 - **Lugging Warning**: Get a visual warning when your engine is running in a low RPM, high-load condition that could be harmful.
 - **Error Reporting**: The app provides a console-like output for connection status and error messages, helping you troubleshoot any issues.
+
+---
+
+### Screenshots
+
+Here are some screenshots of the application in action:
+
+**Main Dashboard:**
+
+<div style="display: flex;">
+  <img src="./assets/photos/obdProMainConnecting.png" alt="Main Dashboard" style="width: 40%; margin-right: 5px;">
+  <img src="./assets/photos/obdProMainDark.png" alt="Dashboard in Dark theme" style="width: 40%; margin-left: 5px;">
+</div>
+
+**Settings Screen:**
+
+<div style="display: flex;">
+  <img src="./assets/photos/obdProSettingsLight.png" alt="Light Theme Settings" style="width: 40%; margin-right: 5px;">
+  <img src="./assets/photos/obdProSettingsDark.png" alt="Dark Theme Settings" style="width: 40%; margin-left: 5px;">
+</div>
 
 ---
 
@@ -33,8 +53,8 @@ To use this application, you will need:
 - **Python 3**: The app is written in Python and requires a Python 3 environment.
 - **`python-OBD` Library**: Install this library using pip:
   `bash
-    pip install python-obd
-    `
+pip install python-obd
+`
   To use with a vehicle, you will need:
 
 - **OBD-II Adapter**: A physical OBD-II adapter (e.g., ELM327) that connects to your car's diagnostic port and communicates via Bluetooth or a serial port.
