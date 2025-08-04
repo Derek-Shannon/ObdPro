@@ -57,8 +57,8 @@ class MainScreen(tk.Frame):
             print("Error loading image. Make sure 'my_image.gif' exists and is a valid GIF file.")
         
         self.bottom_container = tk.Frame(self)
-        self.bottom_container.grid(row=3, column=0, padx=15, pady=10, sticky="w")
-        self.output_label = ttk.Label(self.bottom_container, text=f"")
+        self.bottom_container.grid(row=3, column=0, columnspan=2, padx=15, pady=10, sticky="w")
+        self.output_label = ttk.Label(self.bottom_container, text=f"\n\n")
         self.output_label.pack()
 
     def set_theme(self, theme):
@@ -520,6 +520,8 @@ class Output:
         self.last_text_time = []
         self.message_count = 0
         
+        self.affirmation_time = time.time()
+        
     def add(self, text):
         self.message_count += 1
         self.text_list.insert(0, str(self.message_count)+": "+text)
@@ -528,6 +530,9 @@ class Output:
             self.text_list.pop()
             
     def update(self):
+        if self.affirmation_time+60 < time.time():
+            self.add("Thanks for using ObdPro by ShannonSoftware!")
+            self.affirmation_time = time.time()
         if len(self.text_list) == 0:
             return
         
