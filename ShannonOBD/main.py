@@ -214,7 +214,11 @@ class SettingsScreen(tk.Frame):
             self.debug_button = ttk.Button(self, text="Disable Debug", command=self.on_click_debug_button)
         else:
             self.debug_button = ttk.Button(self, text="Enable Debug", command=self.on_click_debug_button)
-        self.debug_button.grid(row=4, column=0, pady=20)
+        self.debug_button.grid(row=4, column=0, pady=10)
+        
+        #refresh car connection button
+        self.reconnect_button = ttk.Button(self, text="Reconnect", command=self.app.obdPro.start_connection)
+        self.reconnect_button.grid(row=5, column=0, pady=10)
         # Button to save settings and go back
         save_button = ttk.Button(self, text="Save & Back", command=self.save_and_back)
         save_button.grid(row=4, column=0, columnspan=2, pady=20)
@@ -278,7 +282,7 @@ class App(tk.Tk):
             print("Error! No Display available")
         else:
             self.main_screen.output_label.config(text=f"{self.message_count}: {text}")
-        
+    #should only be called once to load gauges
     def start_obd(self):
         self.obdPro.start_connection()
         for data in self.data_list:
@@ -372,27 +376,32 @@ class ObdPro:
         self.names = []
         self.queryReferences = []
         self.queryOutput = [0] * 10  # Initializing with zeroes
+        self.thread = threading.Thread(target=self.connect)
         
     def start_connection(self):
         #connect to car
-        thread = threading.Thread(target=self.connect)
-        thread.start()
+        if not self.thread.is_alive():
+            self.thread = threading.Thread(target=self.connect)
+            self.thread.start()
+        else:
+            self.app.set_output_text("Already Trying to Connect...")
     def connect(self):
         while True:
             if self.app.inDebugMode:
                 break
+            self.connected = False
             try:
                 # Attempt to connect to the OBD-II device
                 self.connection = obd.OBD(self.port)  # Adjust port for Windows
                 if self.connection.is_connected():
                     self.app.set_output_text("Connected to Vehicle!")
+                    self.connected = True
                     break
                 else:
                     self.app.set_output_text("Not connected, retrying...")
             except Exception as e:
                 self.app.set_output_text(f"Error connecting: {e}, retrying...")
             time.sleep(2)
-        self.connected = True
 
     def addValue(self, name: str, queryReference):
         self.names.append(name)

@@ -3,7 +3,7 @@
         "Speed",
         "Rpm",
         "Engine_Load",
-        "Intake_Temp"
+        "Boost"
     ],
     "inDebugMode": true
 }
