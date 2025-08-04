@@ -8,3 +8,4 @@ Issues and Additions:
    b. Auto clear when over 3 lines
    c. Feed it what needs to be changed.
 5. Dark mode
+6. Thanks for using my app message after set time.

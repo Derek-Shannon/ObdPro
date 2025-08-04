@@ -70,9 +70,9 @@ class Gauge(tk.Frame):
         self.variableMax = self._value
         self.variableMin = self._value
         self.max_value_label = tk.Label(container, text=f"to {self.variableMax}{self._unit}")
-        self.max_value_label.grid(column=1, row=0)
+        self.max_value_label.grid(column=1, row=0, sticky="e")
         self.min_value_label = tk.Label(container, text=f"{self.variableMin}{self._unit}")
-        self.min_value_label.grid(column=0, row=0)
+        self.min_value_label.grid(column=0, row=0, sticky="w")
 
         self._redraw()
 
@@ -139,8 +139,8 @@ class Gauge(tk.Frame):
         
 
         #min/max
-        self.max_value_label.config(text=f"to {self.variableMax}{self._unit}")
-        self.min_value_label.config(text=f"{self.variableMin}{self._unit}")
+        self.max_value_label.config(text=f"to {self.variableMax}{self._unit}\n\n\n")
+        self.min_value_label.config(text=f"{self.variableMin}{self._unit}\n\n\n")
 
         # display lowest value
         value_text = "{}".format(self._min_value)
