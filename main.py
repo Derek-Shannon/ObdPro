@@ -57,8 +57,8 @@ class MainScreen(tk.Frame):
             print("Error loading image. Make sure 'my_image.gif' exists and is a valid GIF file.")
         
         self.bottom_container = tk.Frame(self)
-        self.bottom_container.grid(row=3, column=0, padx=15, pady=10, sticky="w")
-        self.output_label = ttk.Label(self.bottom_container, text=f"")
+        self.bottom_container.grid(row=3, column=0, columnspan=2, padx=15, pady=10, sticky="w")
+        self.output_label = ttk.Label(self.bottom_container, text=f"\n\n")
         self.output_label.pack()
 
     def set_theme(self, theme):
@@ -67,9 +67,20 @@ class MainScreen(tk.Frame):
         text_color = self.app.theme[theme]['text']
         
         self.configure(bg=bg_color)
+        
+        # Configure styles for ttk widgets
+        style = ttk.Style()
+        style.configure("TFrame", background=bg_color)
+        style.configure("TLabel", background=bg_color, foreground=text_color)
+        style.configure("TButton", background=bg_color)
+        
         self.side_container.configure(bg=bg_color)
         self.bottom_container.configure(bg=bg_color)
         self.output_label.configure(background=bg_color, foreground=text_color)
+        
+         # This is the new line you need to add or update
+        if self.labels:
+            self.labels[0].configure(background=self.side_container.cget("bg"))
         
         for gauge in self.gauges:
             gauge.set_theme(theme)
@@ -233,23 +244,34 @@ class SettingsScreen(tk.Frame):
             combobox.current(i)  # Set initial selection
             combobox.grid(row=i, column=1, padx=10, pady=10, sticky="w")
             self.comboboxes.append(combobox)
-
-        # Button to enable random numbers
-        self.debug_button = ttk.Button(self, text="Disable Debug" if self.app.inDebugMode else "Enable Debug", command=self.on_click_debug_button, style="TButton")
-        self.debug_button.grid(row=4, column=0, pady=10)
-        
-        # Button to toggle theme
-        self.theme_button = ttk.Button(self, text="Toggle Dark Mode", command=self.app.toggle_theme)
-        self.theme_button.grid(row=5, column=0, pady=10)
-        
-        #refresh car connection button
-        self.reconnect_button = ttk.Button(self, text="Reconnect", command=self.app.obdPro.start_connection)
-        self.reconnect_button.grid(row=6, column=0, pady=10)
-        
+            
         # Button to save settings and go back
         save_button = ttk.Button(self, text="Save & Back", command=self.save_and_back)
-        save_button.grid(row=4, column=0, columnspan=2, pady=10)
-
+        save_button.grid(row=4, column=0, columnspan=2, pady=5)
+        
+        
+        self.bottom_container = ttk.Frame(self, border=2,borderwidth=2,relief=tk.SUNKEN)
+        self.bottom_container.grid(row=5, column=0, columnspan=2, padx=15, pady=10, sticky="w")
+        
+        label = ttk.Label(self.bottom_container, text=f"Extras: ")
+        label.grid(row=0,column=0,rowspan=2, padx=10, pady=10)
+        # Button to enable random numbers
+        self.debug_button = ttk.Button(self.bottom_container, text="Disable Debug" if self.app.inDebugMode else "Enable Debug", command=self.on_click_debug_button)
+        self.debug_button.grid(row=0,column=1, pady=10)
+        
+        # Button to toggle theme
+        self.theme_button = ttk.Button(self.bottom_container, text="Dark Mode", command=self.app.toggle_theme)
+        self.theme_button.grid(row=1,column=1, pady=10)
+        
+        #refresh car connection button
+        self.reconnect_button = ttk.Button(self.bottom_container, text="Reconnect", command=self.app.obdPro.start_connection)
+        self.reconnect_button.grid(row=0,column=2)
+        
+        #Fullscreen button
+        self.fullscreen_button = ttk.Button(self.bottom_container, text="Toggle Fullscreen", command=self.app.toggle_fullscreen)
+        self.fullscreen_button.grid(row=1,column=2)
+        
+        
     def on_click_debug_button(self):
         if self.app.inDebugMode:
             self.debug_button.config(text="Enable Debug")
@@ -270,12 +292,12 @@ class SettingsScreen(tk.Frame):
         style = ttk.Style()
         style.configure("TFrame", background=bg_color)
         style.configure("TLabel", background=bg_color, foreground=text_color)
-        style.configure("TButton", background=bg_color, foreground=text_color)
+        style.configure("TButton", background=bg_color)
         
         if theme == 'dark':
-            self.theme_button.config(text="Toggle Light Mode")
+            self.theme_button.config(text="Light Mode")
         else:
-            self.theme_button.config(text="Toggle Dark Mode")
+            self.theme_button.config(text="Dark Mode")
     
     def update_comboboxes(self):
         """Sets the current value of the comboboxes based on the app's state."""
@@ -391,6 +413,7 @@ class App(tk.Tk):
                     self.gauge_type_selection = json_data['gauge_type_selection']
                     self.inDebugMode = json_data['inDebugMode']
                     self.inDarkMode = json_data['inDarkMode']
+                    self.attributes('-fullscreen', json_data['inFullscreen'])
         except FileNotFoundError:
             print(f"Error: The file {saves_json_path} was not found.")
             
@@ -399,7 +422,8 @@ class App(tk.Tk):
         formatted_save_data = {
             "gauge_type_selection": self.gauge_type_selection,
             "inDebugMode": self.inDebugMode,
-            "inDarkMode": self.inDarkMode
+            "inDarkMode": self.inDarkMode,
+            "inFullscreen": self.attributes('-fullscreen')
         }
         print(formatted_save_data)
         with open(saves_json_path, 'w') as json_file:
@@ -434,6 +458,9 @@ class App(tk.Tk):
     def toggle_theme(self):
         self.inDarkMode = not self.inDarkMode
         self.set_theme()
+    def toggle_fullscreen(self):
+        is_fullscreen = self.attributes('-fullscreen')
+        self.attributes('-fullscreen', not is_fullscreen)
 
 class ObdPro:
     def __init__(self, app):
@@ -509,6 +536,8 @@ class Output:
         self.last_text_time = []
         self.message_count = 0
         
+        self.affirmation_time = time.time()
+        
     def add(self, text):
         self.message_count += 1
         self.text_list.insert(0, str(self.message_count)+": "+text)
@@ -517,6 +546,9 @@ class Output:
             self.text_list.pop()
             
     def update(self):
+        if self.affirmation_time+60 < time.time():
+            #self.add("Thanks for using ObdPro by ShannonSoftware!")
+            self.affirmation_time = time.time()
         if len(self.text_list) == 0:
             return
         

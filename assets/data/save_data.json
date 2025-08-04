@@ -5,6 +5,7 @@
         "Engine_Load",
         "Intake_Temp"
     ],
-    "inDebugMode": true,
-    "inDarkMode": false
+    "inDebugMode": false,
+    "inDarkMode": false,
+    "inFullscreen": 0
 }
