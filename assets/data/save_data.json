@@ -2,11 +2,11 @@
     "gauge_type_selection": [
         "Speed",
         "Rpm",
-        "Spark_adv",
-        "Boost"
+        "Engine_Load",
+        "Intake_Temp"
     ],
     "inDebugMode": true,
     "inDarkMode": true,
     "inFullscreen": 0,
-    "gauge_scale": 0.9593023255813953
+    "gauge_scale": 4.0
 }

@@ -54,9 +54,9 @@ class MainScreen(tk.Frame):
         #gif lug warning
         try:
             # Store the original images
-            self.base_lug_images.append(tk.PhotoImage(file="assets/images/lugWarningGrey.png"))
-            self.base_lug_images.append(tk.PhotoImage(file="assets/images/lugWarning.png"))
-            self.base_lug_images.append(tk.PhotoImage(file="assets/images/lugWarningGreen.png"))
+            self.base_lug_images.append(tk.PhotoImage(file=os.path.join(self.app.script_dir, "assets/images/lugWarningGrey.png")))
+            self.base_lug_images.append(tk.PhotoImage(file=os.path.join(self.app.script_dir, "assets/images/lugWarning.png")))
+            self.base_lug_images.append(tk.PhotoImage(file=os.path.join(self.app.script_dir, "assets/images/lugWarningGreen.png")))
             
             # Create a Label widget to display the image
             self.labels.append(tk.Label(self.side_container, image=self.base_lug_images[1]))
@@ -304,7 +304,7 @@ class SettingsScreen(tk.Frame):
         size_label = ttk.Label(self, text="Gauge Size:")
         size_label.grid(row=4, column=0, padx=10, pady=10, sticky="e")
 
-        self.size_slider = ttk.Scale(self.bottom_container, from_=0.75, to=3.0, orient=tk.HORIZONTAL, variable=self.scale_value)
+        self.size_slider = ttk.Scale(self.bottom_container, from_=0.75, to=4.0, orient=tk.HORIZONTAL, variable=self.scale_value)
         self.size_slider.grid(row=0, column=4, padx=10, pady=10, sticky="ew")
 
         # You can add a label to show the current value of the slider if you like

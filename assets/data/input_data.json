@@ -37,11 +37,10 @@
     "query_reference": "MAF",
     "unit": "lbs/min",
     "min_value": 0,
-    "blue": 10,
-    "light_blue": 20,
-    "yellow": 50,
-    "red": 80,
-    "max_value": 100
+    "blue": 2,
+    "light_blue": 10,
+    "yellow": 20,
+    "max_value": 50
   },
   {
     "name": "Intake_Temp",
