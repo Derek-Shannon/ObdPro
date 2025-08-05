@@ -1,0 +1,16 @@
+[Unit]
+Description=My Python App
+After=network.target
+
+[Service]
+ExecStart=/bin/bash -c 'source /path/to/your/project/venv/bin/activate && python /path/to/your/project/app.py'
+WorkingDirectory=/path/to/your/project
+StandardOutput=tty
+StandardError=tty
+TTYPath=/dev/tty1
+User=pi
+Group=pi
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

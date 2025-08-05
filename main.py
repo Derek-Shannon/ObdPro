@@ -18,6 +18,10 @@ class MainScreen(tk.Frame):
         self.images = []
         self.labels = []
         self.output_label = None
+        
+        self.base_lug_images = []
+        self.scaled_lug_images = []
+
         self.setup_ui()
         
         self.query_output = [0] * len(self.app.data_list)
@@ -49,12 +53,13 @@ class MainScreen(tk.Frame):
         
         #gif lug warning
         try:
-            self.images.append(tk.PhotoImage(file="assets/images/lugWarningGrey.png"))
-            self.images.append(tk.PhotoImage(file="assets/images/lugWarning.png"))
-            self.images.append(tk.PhotoImage(file="assets/images/lugWarningGreen.png"))
+            # Store the original images
+            self.base_lug_images.append(tk.PhotoImage(file="assets/images/lugWarningGrey.png"))
+            self.base_lug_images.append(tk.PhotoImage(file="assets/images/lugWarning.png"))
+            self.base_lug_images.append(tk.PhotoImage(file="assets/images/lugWarningGreen.png"))
             
             # Create a Label widget to display the image
-            self.labels.append(tk.Label(self.side_container, image=self.images[1]))
+            self.labels.append(tk.Label(self.side_container, image=self.base_lug_images[1]))
             self.labels[0].pack(padx=0, pady=1)
             
         except tk.TclError:
@@ -94,6 +99,11 @@ class MainScreen(tk.Frame):
         self.gauges.clear()
         self.gauges_index_in_data_list.clear()
         
+        # First, remove any existing gauges from the grid
+        for widget in self.winfo_children():
+            if isinstance(widget, Gauge.Gauge):
+                widget.destroy()
+
         for i in range(4):
             gauge_name = self.app.gauge_type_selection[i]
             
@@ -104,14 +114,40 @@ class MainScreen(tk.Frame):
                     index_of_gauge = j
                     break
             
-            gauge = Gauge.Gauge(self, **self.app.data_list[index_of_gauge].to_gauge_params())
+            # Pass the scale factor to the Gauge constructor
+            gauge = Gauge.Gauge(self, scale_factor=self.app.gauge_scale, **self.app.data_list[index_of_gauge].to_gauge_params())
             self.gauges.append(gauge)
             self.gauges_index_in_data_list.append(index_of_gauge)
             row = i // 2
             col = i % 2
             gauge.grid(row=row, column=col, padx=0, pady=0, sticky="nsew")
         
+        # Re-scale the lug images
+        self.scale_lug_images(self.app.gauge_scale)
+
         self.set_theme(self.app.current_theme)
+
+    def scale_lug_images(self, scale):
+        """Scales the lug warning images based on the scale factor."""
+        # Clear the scaled images list
+        self.scaled_lug_images = []
+        
+        # Scale each base image and add it to the scaled list
+        for image in self.base_lug_images:
+            width = int(image.width() * scale)
+            height = int(image.height() * scale)
+            # Use subsample to scale the image. Note: PhotoImage.subsample() only works for integer scaling.
+            # A more robust solution for fractional scaling would involve an external library like Pillow (PIL).
+            # For this example, let's assume integer scaling for simplicity, but you may need to adjust this.
+            if scale >= 1:
+                self.scaled_lug_images.append(image.zoom(int(scale)))
+            else:
+                self.scaled_lug_images.append(image.subsample(int(1/scale)))
+        
+        # Update the image on the label
+        if self.labels:
+            self.labels[0].config(image=self.scaled_lug_images[0])
+            self.check_lug_warning() # Update the image to the correct state
 
     def reset_min_max(self):
         for gauge in self.gauges:
@@ -150,14 +186,15 @@ class MainScreen(tk.Frame):
                 rpm = self.query_output[index]
             if self.app.data_list[index].name == "Engine_Load":
                 engine_load = self.query_output[index]
+        
         #lugging
         if engine_load>30 and rpm<2000:
-            self.labels[0].configure(image=self.images[1])
+            self.labels[0].configure(image=self.scaled_lug_images[1])
         #coasting
         elif engine_load<25 and rpm<2500 and rpm>1800:
-            self.labels[0].configure(image=self.images[2])
+            self.labels[0].configure(image=self.scaled_lug_images[2])
         else:
-            self.labels[0].configure(image=self.images[0])
+            self.labels[0].configure(image=self.scaled_lug_images[0])
             
     def simulate_data(self):
         if self.app.obdPro.connected:
@@ -225,6 +262,10 @@ class SettingsScreen(tk.Frame):
         super().__init__(parent)
         self.app = app_instance
         self.comboboxes = []
+
+        # Add a new variable for the slider value
+        self.scale_value = tk.DoubleVar(value=self.app.gauge_scale)
+
         self.setup_ui()
         self.set_theme(self.app.current_theme)
 
@@ -257,6 +298,18 @@ class SettingsScreen(tk.Frame):
         self.bottom_container = ttk.Frame(self, border=2,borderwidth=2,relief=tk.SUNKEN)
         self.bottom_container.grid(row=5, column=0, columnspan=2, padx=15, pady=10, sticky="w")
         
+        # Add a label and a slider for the gauge size
+        size_label = ttk.Label(self, text="Gauge Size:")
+        size_label.grid(row=4, column=0, padx=10, pady=10, sticky="e")
+
+        self.size_slider = ttk.Scale(self.bottom_container, from_=0.75, to=3.0, orient=tk.HORIZONTAL, variable=self.scale_value)
+        self.size_slider.grid(row=0, column=4, padx=10, pady=10, sticky="ew")
+
+        # You can add a label to show the current value of the slider if you like
+        self.size_value_label = ttk.Label(self.bottom_container, text=f"{self.scale_value.get():.2f}")
+        self.size_value_label.grid(row=0, column=3, padx=10, pady=10, sticky="w")
+        self.size_slider.bind("<Motion>", self.update_size_label) # Add this line to update the label in real-time.
+
         label = ttk.Label(self.bottom_container, text=f"Extras: ")
         label.grid(row=0,column=0,rowspan=2, padx=10, pady=10)
         # Button to enable random numbers
@@ -274,7 +327,9 @@ class SettingsScreen(tk.Frame):
         #Fullscreen button
         self.fullscreen_button = ttk.Button(self.bottom_container, text="Toggle Fullscreen", command=self.app.toggle_fullscreen)
         self.fullscreen_button.grid(row=1,column=2)
-        
+    def update_size_label(self, event):
+        """Updates the label text with the current slider value."""
+        self.size_value_label.config(text=f"{self.scale_value.get():.2f}")
         
     def on_click_debug_button(self):
         if self.app.inDebugMode:
@@ -312,6 +367,9 @@ class SettingsScreen(tk.Frame):
         """Saves the new settings and returns to the main screen."""
         new_selections = [cb.get() for cb in self.comboboxes]
         self.app.gauge_type_selection = new_selections
+
+        self.app.gauge_scale = self.scale_value.get()
+
         #save
         self.app.save_json_data()
         self.app.show_main_screen()
@@ -342,7 +400,8 @@ class App(tk.Tk):
                 'outline': '#FFFFFF'
             }
         }
-        
+
+        self.gauge_scale = 1.0
         self.gauge_type_selection = ["Spark_adv", "Rpm", "Engine_Load", "Intake_Temp"]
         
         self.container = tk.Frame(self)
@@ -418,6 +477,7 @@ class App(tk.Tk):
                     self.inDebugMode = json_data['inDebugMode']
                     self.inDarkMode = json_data['inDarkMode']
                     self.attributes('-fullscreen', json_data['inFullscreen'])
+                    self.gauge_scale = json_data.get('gauge_scale', 1.0)
         except FileNotFoundError:
             print(f"Error: The file {saves_json_path} was not found.")
             
@@ -427,7 +487,8 @@ class App(tk.Tk):
             "gauge_type_selection": self.gauge_type_selection,
             "inDebugMode": self.inDebugMode,
             "inDarkMode": self.inDarkMode,
-            "inFullscreen": self.attributes('-fullscreen')
+            "inFullscreen": self.attributes('-fullscreen'),
+            "gauge_scale": self.gauge_scale
         }
         print(formatted_save_data)
         with open(saves_json_path, 'w') as json_file:

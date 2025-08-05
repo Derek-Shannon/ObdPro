@@ -5,7 +5,8 @@
         "Engine_Load",
         "Intake_Temp"
     ],
-    "inDebugMode": false,
+    "inDebugMode": true,
     "inDarkMode": false,
-    "inFullscreen": 0
+    "inFullscreen": 0,
+    "gauge_scale": 1.0116279069767442
 }
