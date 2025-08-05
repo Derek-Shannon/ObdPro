@@ -29,7 +29,7 @@ class MainScreen(tk.Frame):
         self.moveTimer = [0] * len(self.app.data_list)
         self.movePower = [0] * len(self.app.data_list)
         
-        self.fps = 10
+        self.fps = 30
         self.set_theme(self.app.current_theme)
 
     def setup_ui(self):
@@ -163,12 +163,14 @@ class MainScreen(tk.Frame):
         for index in range(len(self.app.data_list)):
             self.moveTimer[index] -= 1
             if self.moveTimer[index] <= 0:
-                self.moveTimer[index] = random.randint(1,8)
+                self.moveTimer[index] = random.randint(5*self.fps/10,10*self.fps/10)
                 full_range = self.app.data_list[index].max_value-self.app.data_list[index].min_value
-                self.movePower[index] = random.randint(int(-full_range/10),int(full_range/10))
+                self.movePower[index] = random.uniform(-full_range / self.fps, full_range / self.fps)
+            if self.last_query_output[index] == self.app.data_list[index].max_value or self.last_query_output[index] == self.app.data_list[index].min_value:
+                self.movePower[index] = -self.movePower[index]
             value = self.last_query_output[index]+self.movePower[index]
             new_query_output.append(max(self.app.data_list[index].min_value, min(value, self.app.data_list[index].max_value)))
-
+            
         self.last_query_output = new_query_output
         self.query_output = new_query_output
         self.update_gauges(self.query_output)
