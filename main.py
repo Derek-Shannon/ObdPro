@@ -44,11 +44,11 @@ class MainScreen(tk.Frame):
         self.side_container.grid(row=0, column=2, rowspan=2,sticky="ne", padx=0, pady=5)
 
         # Place the settings buttons within the new container frame
-        self.settings_button = ttk.Button(self.side_container, width=14, text="⚙️ Settings",command=self.app.show_settings_screen)
+        self.settings_button = tk.Button(self.side_container, width=14, text="⚙️ Settings",command=self.app.show_settings_screen)
         self.settings_button.pack(pady=5)
         
         # Button to reset min/max
-        self.reset_min_max_button = ttk.Button(self.side_container, width=14, text="Reset Min/Max", command=self.reset_min_max)
+        self.reset_min_max_button = tk.Button(self.side_container, width=14, text="Reset Min/Max", command=self.reset_min_max)
         self.reset_min_max_button.pack(pady=1)
         
         #gif lug warning
@@ -81,7 +81,7 @@ class MainScreen(tk.Frame):
         style = ttk.Style()
         style.configure("TFrame", background=bg_color)
         style.configure("TLabel", background=bg_color, foreground=text_color)
-        style.configure("TButton", background=bg_color)
+        #style.configure("TButton", background=bg_color)
         
         self.side_container.configure(bg=bg_color)
         self.bottom_container.configure(bg=bg_color)
@@ -291,7 +291,7 @@ class SettingsScreen(tk.Frame):
             self.comboboxes.append(combobox)
             
         # Button to save settings and go back
-        save_button = ttk.Button(self, text="Save & Back", command=self.save_and_back)
+        save_button = tk.Button(self, text="Save & Back", command=self.save_and_back)
         save_button.grid(row=4, column=0, columnspan=2, pady=5)
         
         
@@ -313,19 +313,19 @@ class SettingsScreen(tk.Frame):
         label = ttk.Label(self.bottom_container, text=f"Extras: ")
         label.grid(row=0,column=0,rowspan=2, padx=10, pady=10)
         # Button to enable random numbers
-        self.debug_button = ttk.Button(self.bottom_container, text="Disable Debug" if self.app.inDebugMode else "Enable Debug", command=self.on_click_debug_button)
+        self.debug_button = tk.Button(self.bottom_container, text="Disable Debug" if self.app.inDebugMode else "Enable Debug", command=self.on_click_debug_button)
         self.debug_button.grid(row=0,column=1, pady=10)
         
         # Button to toggle theme
-        self.theme_button = ttk.Button(self.bottom_container, text="Dark Mode", command=self.app.toggle_theme)
+        self.theme_button = tk.Button(self.bottom_container, text="Dark Mode", command=self.app.toggle_theme)
         self.theme_button.grid(row=1,column=1, pady=10)
         
         #refresh car connection button
-        self.reconnect_button = ttk.Button(self.bottom_container, text="Reconnect", command=self.app.obdPro.start_connection)
+        self.reconnect_button = tk.Button(self.bottom_container, text="Reconnect", command=self.app.obdPro.start_connection)
         self.reconnect_button.grid(row=0,column=2)
         
         #Fullscreen button
-        self.fullscreen_button = ttk.Button(self.bottom_container, text="Toggle Fullscreen", command=self.app.toggle_fullscreen)
+        self.fullscreen_button = tk.Button(self.bottom_container, text="Toggle Fullscreen", command=self.app.toggle_fullscreen)
         self.fullscreen_button.grid(row=1,column=2)
     def update_size_label(self, event):
         """Updates the label text with the current slider value."""
@@ -351,7 +351,7 @@ class SettingsScreen(tk.Frame):
         style = ttk.Style()
         style.configure("TFrame", background=bg_color)
         style.configure("TLabel", background=bg_color, foreground=text_color)
-        style.configure("TButton", background=bg_color)
+        #style.configure("TButton", background=bg_color)
         
         if theme == 'dark':
             self.theme_button.config(text="Light Mode")

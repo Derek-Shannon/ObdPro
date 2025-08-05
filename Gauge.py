@@ -92,9 +92,9 @@ class Gauge(tk.Frame):
         container.pack()
         self.variableMax = self._value
         self.variableMin = self._value
-        self.max_value_label = tk.Label(container, text=f"to {self.variableMax}{self._unit}", bg=self.theme_colors[self.current_theme]['frame_bg'], fg=self.theme_colors[self.current_theme]['text'])
+        self.max_value_label = tk.Label(container, text=f"to {self.variableMax}{self._unit}", bg=self.theme_colors[self.current_theme]['frame_bg'], fg=self.theme_colors[self.current_theme]['text'], font=("Courier New", int(10*self._scale_factor)))
         self.max_value_label.grid(column=1, row=0, sticky="e")
-        self.min_value_label = tk.Label(container, text=f"{self.variableMin}{self._unit}", bg=self.theme_colors[self.current_theme]['frame_bg'], fg=self.theme_colors[self.current_theme]['text'])
+        self.min_value_label = tk.Label(container, text=f"{self.variableMin}{self._unit}", bg=self.theme_colors[self.current_theme]['frame_bg'], fg=self.theme_colors[self.current_theme]['text'], font=("Courier New", int(10*self._scale_factor)))
         self.min_value_label.grid(column=0, row=0, sticky="w")
         
         self.configure(bg=self.theme_colors[self.current_theme]['frame_bg'])
@@ -192,7 +192,7 @@ class Gauge(tk.Frame):
         self._canvas.create_text(
             self._width * 0.1,
             self._height * 0.7,
-            font=("Courier New", 10),
+            font=("Courier New", int(10*self._scale_factor)),
             text=value_text,
             fill=text_color,
         )
@@ -201,7 +201,7 @@ class Gauge(tk.Frame):
         self._canvas.create_text(
             self._width * 0.9,
             self._height * 0.7,
-            font=("Courier New", 10),
+            font=("Courier New", int(10*self._scale_factor)),
             text=value_text,
             fill=text_color,
         )
@@ -210,7 +210,7 @@ class Gauge(tk.Frame):
         self._canvas.create_text(
             self._width * 0.5,
             self._height * 0.1,
-            font=("Courier New", 10),
+            font=("Courier New", int(10*self._scale_factor)),
             text=value_text,
             fill=text_color,
         )
@@ -257,9 +257,9 @@ class Gauge(tk.Frame):
 
     def readout(self, value, bg):
         # draw the black behind the readout
-        r_width = 95
-        r_height = 20
-        r_offset = 8
+        r_width = 95*self._scale_factor
+        r_height = 20*self._scale_factor
+        r_offset = 8*self._scale_factor
         self._canvas.create_rectangle(
             self._width / 2.0 - r_width / 2.0,
             self._height / 2.0 - r_height / 2.0 + r_offset,
@@ -273,7 +273,7 @@ class Gauge(tk.Frame):
         self._canvas.create_text(
             self._width * 0.5,
             self._height * 0.5 - r_offset,
-            font=("Courier New", 10),
+            font=("Courier New", int(10*self._scale_factor)),
             text=self._label,
             fill=text_color,
         )
@@ -283,7 +283,7 @@ class Gauge(tk.Frame):
             self._canvas.create_text(
                 self._width * 0.5,
                 self._height * 0.5 + r_offset,
-                font=("Courier New", 10),
+                font=("Courier New", int(10*self._scale_factor)),
                 text=value_text,
                 fill="black",
             )
@@ -291,7 +291,7 @@ class Gauge(tk.Frame):
             self._canvas.create_text(
                 self._width * 0.5,
                 self._height * 0.5 + r_offset,
-                font=("Courier New", 10),
+                font=("Courier New", int(10*self._scale_factor)),
                 text=value_text,
                 fill="white",
             )

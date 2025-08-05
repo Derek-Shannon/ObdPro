@@ -6,7 +6,7 @@
         "Intake_Temp"
     ],
     "inDebugMode": true,
-    "inDarkMode": false,
+    "inDarkMode": true,
     "inFullscreen": 0,
-    "gauge_scale": 1.0116279069767442
+    "gauge_scale": 0.9593023255813953
 }
