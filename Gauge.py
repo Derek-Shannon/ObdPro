@@ -70,11 +70,11 @@ class Gauge(tk.Frame):
                 'outline': '#343434'
             },
             'dark': {
-                'frame_bg': '#2C2C2C',
-                'canvas_bg': '#2C2C2C',
-                'inner_bg': '#1E1E1E',
+                'frame_bg': "#000000",
+                'canvas_bg': "#000000",
+                'inner_bg': "#000000",
                 'text': '#F0F0F0',
-                'outline': '#FFFFFF'
+                'outline': "#3B3B3B"
             }
         }
         self.current_theme = 'light'

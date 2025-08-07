@@ -391,9 +391,9 @@ class App(tk.Tk):
                 'outline': '#343434'
             },
             'dark': {
-                'frame_bg': '#2C2C2C',
-                'canvas_bg': '#2C2C2C',
-                'inner_bg': '#1E1E1E',
+                'frame_bg': "#000000",
+                'canvas_bg': "#000000",
+                'inner_bg': "#000000",
                 'text': '#F0F0F0',
                 'outline': '#FFFFFF'
             }
@@ -530,10 +530,6 @@ class ObdPro:
         self.queryReferences = []
         self.queryOutput = [0] * 10
         self.thread = threading.Thread(target=self.connect)
-
-        #initalize data values
-        for data in self.app.data_list:
-            self.addValue(data.name, data.query_reference)
         
     def start_connection(self):
         if not self.thread.is_alive():
@@ -559,10 +555,18 @@ class ObdPro:
                 self.app.set_output_text(f"Error connecting: {e}, retrying...")
             time.sleep(2)
 
-    def addValue(self, name: str, queryReference):
-        self.names.append(name)
-        self.queryReferences.append(queryReference)
+        self.names = []
+        self.queryReferences = []
+        for data in self.app.data_list:
+            self.addValue(data.name, data.query_reference)
 
+    def addValue(self, name: str, queryReference):
+        #test open values
+        if self.connection.supports(queryReference):
+            self.names.append(name)
+            self.queryReferences.append(queryReference)
+        else:
+            print("Car")
     def convert_to_standard_units(self, index, value):
         if self.names[index] == "Speed":
             return int(value * 0.621371)

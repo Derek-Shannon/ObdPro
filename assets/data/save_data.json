@@ -1,12 +1,12 @@
 {
     "gauge_type_selection": [
-        "Speed",
+        "Coolant_temp",
         "Rpm",
-        "Engine_Load",
-        "Intake_Temp"
+        "Intake_Temp",
+        "Ambiant_Temp"
     ],
-    "inDebugMode": false,
+    "inDebugMode": true,
     "inDarkMode": true,
     "inFullscreen": 0,
-    "gauge_scale": 0.938953488372093
+    "gauge_scale": 1.052325581395349
 }
