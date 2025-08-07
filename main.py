@@ -44,11 +44,11 @@ class MainScreen(tk.Frame):
         self.side_container.grid(row=0, column=2, rowspan=2,sticky="ne", padx=0, pady=5)
 
         # Place the settings buttons within the new container frame
-        self.settings_button = tk.Button(self.side_container, width=14, text="⚙️ Settings",command=self.app.show_settings_screen)
+        self.settings_button = tk.Button(self.side_container, text="⚙️ Settings",command=self.app.show_settings_screen)
         self.settings_button.pack(pady=5)
         
         # Button to reset min/max
-        self.reset_min_max_button = tk.Button(self.side_container, width=14, text="Reset Min/Max", command=self.reset_min_max)
+        self.reset_min_max_button = tk.Button(self.side_container, text="↻ Min/Max", command=self.reset_min_max)
         self.reset_min_max_button.pack(pady=1)
         
         #gif lug warning
@@ -301,15 +301,11 @@ class SettingsScreen(tk.Frame):
         self.bottom_container.grid(row=5, column=0, columnspan=2, padx=15, pady=10, sticky="w")
         
         # Add a label and a slider for the gauge size
-        size_label = ttk.Label(self, text="Gauge Size:")
-        size_label.grid(row=4, column=0, padx=10, pady=10, sticky="e")
+        self.size_label = ttk.Label(self.bottom_container, text=f"Gauge Size: {self.scale_value.get():.2f}")
+        self.size_label.grid(row=0, column=3, padx=0, pady=10, sticky="w")
 
         self.size_slider = ttk.Scale(self.bottom_container, from_=0.75, to=4.0, orient=tk.HORIZONTAL, variable=self.scale_value)
-        self.size_slider.grid(row=0, column=4, padx=10, pady=10, sticky="ew")
-
-        # You can add a label to show the current value of the slider if you like
-        self.size_value_label = ttk.Label(self.bottom_container, text=f"{self.scale_value.get():.2f}")
-        self.size_value_label.grid(row=0, column=3, padx=10, pady=10, sticky="w")
+        self.size_slider.grid(row=1, column=3, padx=0, pady=10, sticky="w")
         self.size_slider.bind("<Motion>", self.update_size_label) # Add this line to update the label in real-time.
 
         label = ttk.Label(self.bottom_container, text=f"Extras: ")
@@ -331,7 +327,7 @@ class SettingsScreen(tk.Frame):
         self.fullscreen_button.grid(row=1,column=2)
     def update_size_label(self, event):
         """Updates the label text with the current slider value."""
-        self.size_value_label.config(text=f"{self.scale_value.get():.2f}")
+        self.size_label.config(text=f"Gauge Size: {self.scale_value.get():.2f}")
         
     def on_click_debug_button(self):
         if self.app.inDebugMode:
@@ -443,11 +439,6 @@ class App(tk.Tk):
         else:
             self.output.add(text)
             
-    def start_obd(self):
-        self.obdPro.start_connection()
-        for data in self.data_list:
-            self.obdPro.addValue(data.name, data.query_reference)
-            
     def get_json_data(self):
         json_file_path = os.path.join(self.script_dir, 'assets/data/input_data.json')
         with open(json_file_path, 'r', encoding="utf-8") as file:
@@ -506,8 +497,8 @@ class App(tk.Tk):
         self.main_screen.pack(fill="both", expand=True)
         self.set_theme()
         
-        if not self.inDebugMode:
-            self.start_obd()
+        if not self.inDebugMode and not self.obdPro.connected:
+            self.obdPro.start_connection()
         self.main_screen.start_simulation()
 
     def show_settings_screen(self):
@@ -539,6 +530,10 @@ class ObdPro:
         self.queryReferences = []
         self.queryOutput = [0] * 10
         self.thread = threading.Thread(target=self.connect)
+
+        #initalize data values
+        for data in self.app.data_list:
+            self.addValue(data.name, data.query_reference)
         
     def start_connection(self):
         if not self.thread.is_alive():

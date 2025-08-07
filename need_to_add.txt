@@ -1,0 +1,8 @@
+1. Auto scale Gauges if user selects
+2. option for multiple different Gauges
+3. User select FPS 
+
+ISSUES:
+1. Screen too small for rasberrypi: 
+    a. Hide output area when empty
+    b. Move settings buttons and icon to bottom?
