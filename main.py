@@ -286,11 +286,11 @@ class SettingsScreen(tk.Frame):
         # Create a dropdown for each of the four gauges
         for i in range(4):
             label = ttk.Label(self, text=f"Gauge {i+1} Type:")
-            label.grid(row=i, column=0, padx=10, pady=10, sticky="e")
+            label.grid(row=i, column=0, padx=10, pady=5, sticky="e")
             
             combobox = ttk.Combobox(self, values=options)
             combobox.current(i)  # Set initial selection
-            combobox.grid(row=i, column=1, padx=10, pady=10, sticky="w")
+            combobox.grid(row=i, column=1, padx=10, pady=5, sticky="w")
             self.comboboxes.append(combobox)
             
         # Button to save settings and go back
