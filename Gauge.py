@@ -29,8 +29,8 @@ class Gauge(tk.Frame):
     def __init__(
         self,
         parent,
-        width: int = 190,
-        height: int = 100,
+        width: int = 200,
+        height: int = 80,
         min_value=0.0,
         max_value=100.0,
         label="",

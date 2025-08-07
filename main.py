@@ -39,17 +39,9 @@ class MainScreen(tk.Frame):
         self.rowconfigure(0, weight=1)
         self.rowconfigure(1, weight=1)
 
-        # Create a container frame for the settings buttons
-        self.side_container = tk.Frame(self)
-        self.side_container.grid(row=0, column=2, rowspan=2,sticky="ne", padx=0, pady=5)
-
-        # Place the settings buttons within the new container frame
-        self.settings_button = tk.Button(self.side_container, text="⚙️ Settings",command=self.app.show_settings_screen)
-        self.settings_button.pack(pady=5)
-        
-        # Button to reset min/max
-        self.reset_min_max_button = tk.Button(self.side_container, text="↻ Min/Max", command=self.reset_min_max)
-        self.reset_min_max_button.pack(pady=1)
+        self.bottom_container = tk.Frame(self)
+        self.bottom_container.grid(row=2, column=1, padx=15, pady=0, sticky="e")
+        self.bottom_container.grid_rowconfigure(0, weight=1)
         
         #gif lug warning
         try:
@@ -59,16 +51,22 @@ class MainScreen(tk.Frame):
             self.base_lug_images.append(tk.PhotoImage(file=os.path.join(self.app.script_dir, "assets/images/lugWarningGreen.png")))
             
             # Create a Label widget to display the image
-            self.labels.append(tk.Label(self.side_container, image=self.base_lug_images[1]))
-            self.labels[0].pack(padx=0, pady=1)
+            self.labels.append(tk.Label(self.bottom_container, image=self.base_lug_images[1]))
+            self.labels[0].grid(row=0,column=0, rowspan=3, padx=0, pady=0, sticky="e")
             
         except tk.TclError:
             print("Error loading image. Make sure 'my_image.gif' exists and is a valid GIF file.")
+
+        # Place the settings buttons within the new container frame
+        self.settings_button = tk.Button(self.bottom_container, text="⚙️ Settings",command=self.app.show_settings_screen)
+        self.settings_button.grid(row=1,column=1, pady=1, sticky="e",)
         
-        self.bottom_container = tk.Frame(self)
-        self.bottom_container.grid(row=3, column=0, columnspan=2, padx=15, pady=10, sticky="w")
-        self.output_label = ttk.Label(self.bottom_container, text=f"\n\n")
-        self.output_label.pack()
+        # Button to reset min/max
+        self.reset_min_max_button = tk.Button(self.bottom_container, text="↻ Min/Max", command=self.reset_min_max)
+        self.reset_min_max_button.grid(row=2,column=1, pady=1, sticky="e")
+
+        self.output_label = ttk.Label(self, text=f"\n\n")
+        self.output_label.grid(row=2,column=0,rowspan=1, columnspan=1, sticky="w")
 
     def set_theme(self, theme):
         """Applies the current theme to the MainScreen and all its widgets."""
@@ -83,13 +81,12 @@ class MainScreen(tk.Frame):
         style.configure("TLabel", background=bg_color, foreground=text_color)
         #style.configure("TButton", background=bg_color)
         
-        self.side_container.configure(bg=bg_color)
         self.bottom_container.configure(bg=bg_color)
         self.output_label.configure(background=bg_color, foreground=text_color)
         
          # This is the new line you need to add or update
         if self.labels:
-            self.labels[0].configure(background=self.side_container.cget("bg"))
+            self.labels[0].configure(background=self.bottom_container.cget("bg"))
         
         for gauge in self.gauges:
             gauge.set_theme(theme)
@@ -275,12 +272,16 @@ class SettingsScreen(tk.Frame):
         """Sets up the layout of the settings screen."""
         self.columnconfigure(0, weight=1)
         self.columnconfigure(1, weight=1)
-        self.columnconfigure(2, weight=1)
-        
+        self.columnconfigure(2, weight=0)
+
         # Dropdown options from the App's configs
         options = []
-        for data in self.app.data_list:
-            options.append(data.name)
+        if self.app.obdPro.connected:
+            for name in self.app.obdPro.names:
+                options.append(name)
+        else:
+            for data in self.app.data_list:
+                options.append(data.name)
 
         # Create a dropdown for each of the four gauges
         for i in range(4):
@@ -294,7 +295,7 @@ class SettingsScreen(tk.Frame):
             
         # Button to save settings and go back
         save_button = tk.Button(self, text="Save & Back", command=self.save_and_back)
-        save_button.grid(row=4, column=0, columnspan=2, pady=5)
+        save_button.grid(row=4, column=1, columnspan=1, pady=5, sticky="w")
         
         
         self.bottom_container = ttk.Frame(self, border=2,borderwidth=2,relief=tk.SUNKEN)
@@ -304,7 +305,7 @@ class SettingsScreen(tk.Frame):
         self.size_label = ttk.Label(self.bottom_container, text=f"Gauge Size: {self.scale_value.get():.2f}")
         self.size_label.grid(row=0, column=3, padx=0, pady=10, sticky="w")
 
-        self.size_slider = ttk.Scale(self.bottom_container, from_=0.75, to=4.0, orient=tk.HORIZONTAL, variable=self.scale_value)
+        self.size_slider = ttk.Scale(self.bottom_container, from_=0.75, to=1.5, orient=tk.HORIZONTAL, variable=self.scale_value)
         self.size_slider.grid(row=1, column=3, padx=0, pady=10, sticky="w")
         self.size_slider.bind("<Motion>", self.update_size_label) # Add this line to update the label in real-time.
 

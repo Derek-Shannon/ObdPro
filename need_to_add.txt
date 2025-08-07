@@ -1,6 +1,7 @@
 1. Auto scale Gauges if user selects
 2. option for multiple different Gauges
 3. User select FPS 
+4. Update Button that allows user to download update to app from github
 
 ISSUES:
 1. Screen too small for rasberrypi: 
