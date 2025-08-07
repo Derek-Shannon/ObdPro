@@ -5,7 +5,7 @@
 
 import tkinter as tk
 from tkinter import ttk
-import random, math, os, obd, json, time, threading, Gauge
+import random, math, os, obd, json, time, threading, Gauge, GaugeV2
 
 class MainScreen(tk.Frame):
     """The main dashboard screen with 4 gauges."""
@@ -96,32 +96,39 @@ class MainScreen(tk.Frame):
         self.gauges.clear()
         self.gauges_index_in_data_list.clear()
         
-        # First, remove any existing gauges from the grid
         for widget in self.winfo_children():
-            if isinstance(widget, Gauge.Gauge):
+            if isinstance(widget, (Gauge.Gauge, GaugeV2.GaugeV2)):
                 widget.destroy()
 
-        for i in range(4):
+        # Determine which gauge class to use based on the single checkbox state
+        if self.app.legacy_gauge_selection[0]:
+            gauge_class = Gauge.Gauge
+        else:
+            gauge_class = GaugeV2.GaugeV2
+
+        for i in range(self.app.gauge_number):
             gauge_name = self.app.gauge_type_selection[i]
             
-            #finds the index of the name
             index_of_gauge = -1
             for j, data_object in enumerate(self.app.data_list):
                 if data_object.name == gauge_name:
                     index_of_gauge = j
                     break
             
-            # Pass the scale factor to the Gauge constructor
-            gauge = Gauge.Gauge(self, scale_factor=self.app.gauge_scale, **self.app.data_list[index_of_gauge].to_gauge_params())
+            gauge = gauge_class(self, scale_factor=self.app.gauge_scale, **self.app.data_list[index_of_gauge].to_gauge_params())
             self.gauges.append(gauge)
             self.gauges_index_in_data_list.append(index_of_gauge)
-            row = i // 2
-            col = i % 2
-            gauge.grid(row=row, column=col, padx=0, pady=0, sticky="nsew")
+            
+            # Grid layout needs to be adjusted for 2 gauges vs 4
+            if self.app.gauge_number == 2:
+                # If there are 2 gauges, place them on the first row
+                gauge.grid(row=0, column=i, padx=0, pady=0, sticky="nsew")
+            else:
+                row = i // 2
+                col = i % 2
+                gauge.grid(row=row, column=col, padx=0, pady=0, sticky="nsew")
         
-        # Re-scale the lug images
         self.scale_lug_images(self.app.gauge_scale)
-
         self.set_theme(self.app.current_theme)
 
     def scale_lug_images(self, scale):
@@ -261,7 +268,9 @@ class SettingsScreen(tk.Frame):
         super().__init__(parent)
         self.app = app_instance
         self.comboboxes = []
-
+        # Removed individual checkboxes, now we have one
+        self.gauge_type_var = tk.BooleanVar(value=self.app.legacy_gauge_selection[0])
+        
         # Add a new variable for the slider value
         self.scale_value = tk.DoubleVar(value=self.app.gauge_scale)
 
@@ -270,11 +279,12 @@ class SettingsScreen(tk.Frame):
 
     def setup_ui(self):
         """Sets up the layout of the settings screen."""
-        self.columnconfigure(0, weight=1)
-        self.columnconfigure(1, weight=1)
+        self.columnconfigure(0, weight=0)
+        self.columnconfigure(1, weight=0)
         self.columnconfigure(2, weight=0)
+        self.columnconfigure(3, weight=0)
+        self.columnconfigure(4, weight=1)
 
-        # Dropdown options from the App's configs
         options = []
         if self.app.obdPro.connected:
             for name in self.app.obdPro.names:
@@ -283,23 +293,28 @@ class SettingsScreen(tk.Frame):
             for data in self.app.data_list:
                 options.append(data.name)
 
-        # Create a dropdown for each of the four gauges
-        for i in range(4):
+        # The number of comboboxes now depends on the current gauge_number
+        for i in range(self.app.gauge_number):
             label = ttk.Label(self, text=f"Gauge {i+1} Type:")
             label.grid(row=i, column=0, padx=10, pady=5, sticky="e")
             
             combobox = ttk.Combobox(self, values=options)
-            combobox.current(i)  # Set initial selection
+            combobox.current(i)
             combobox.grid(row=i, column=1, padx=10, pady=5, sticky="w")
             self.comboboxes.append(combobox)
-            
-        # Button to save settings and go back
-        save_button = tk.Button(self, text="Save & Back", command=self.save_and_back)
-        save_button.grid(row=4, column=1, columnspan=1, pady=5, sticky="w")
         
+        # New single checkbox and label
+        checkbox_label = ttk.Label(self, text="Use 2 GaugeV2 Layout:")
+        checkbox_label.grid(row=4, column=0, padx=10, pady=5, sticky="e")
+        gauge_type_checkbox = tk.Checkbutton(self, variable=self.gauge_type_var)
+        gauge_type_checkbox.grid(row=4, column=1, sticky="w")
+        
+        save_button = tk.Button(self, text="Save & Back", command=self.save_and_back)
+        save_button.grid(row=4, column=2, columnspan=1, pady=5, sticky="w")
         
         self.bottom_container = ttk.Frame(self, border=2,borderwidth=2,relief=tk.SUNKEN)
-        self.bottom_container.grid(row=5, column=0, columnspan=2, padx=15, pady=10, sticky="w")
+        # The bottom container now spans columns 0, 1, and 2. It will align with the other widgets.
+        self.bottom_container.grid(row=5, column=0, columnspan=3, padx=15, pady=10, sticky="w")
         
         # Add a label and a slider for the gauge size
         self.size_label = ttk.Label(self.bottom_container, text=f"Gauge Size: {self.scale_value.get():.2f}")
@@ -365,11 +380,20 @@ class SettingsScreen(tk.Frame):
     def save_and_back(self):
         """Saves the new settings and returns to the main screen."""
         new_selections = [cb.get() for cb in self.comboboxes]
-        self.app.gauge_type_selection = new_selections
+        # Ensure that the selection list is the correct size before updating
+        self.app.gauge_type_selection = new_selections + [""] * (4 - len(new_selections))
+        
+        # Get the state of the new single checkbox
+        is_gauge_v2 = self.gauge_type_var.get()
+        
+        if is_gauge_v2:
+            self.app.gauge_number = 2
+            self.app.legacy_gauge_selection = [False, False]
+        else:
+            self.app.gauge_number = 4
+            self.app.legacy_gauge_selection = [True, True, True, True]
 
         self.app.gauge_scale = self.scale_value.get()
-
-        #save
         self.app.save_json_data()
         self.app.show_main_screen()
         print("Saved")
@@ -414,6 +438,10 @@ class App(tk.Tk):
         self.inDebugMode = True
         self.inDarkMode = False
         self.current_theme = 'light'
+        # Default to 4 gauges
+        self.gauge_number = 4
+        # Default legacy_gauge_selection to match the number of gauges
+        self.legacy_gauge_selection = [True] * self.gauge_number
         
         self.get_json_data()
         
@@ -421,6 +449,7 @@ class App(tk.Tk):
         
         self.show_main_screen()
         self.set_theme()
+
 
     def set_theme(self):
         """Updates the theme for the entire app."""

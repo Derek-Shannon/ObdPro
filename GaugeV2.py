@@ -5,8 +5,8 @@ class GaugeV2(tk.Canvas):
     def __init__(
         self,
         parent,
-        width: int = 200,
-        height: int = 200,
+        width: int = 240,
+        height: int = 240,
         min_value=0.0,
         max_value=100.0,
         label="",
@@ -37,6 +37,7 @@ class GaugeV2(tk.Canvas):
         self.max_value = max_value
         self.major_tick_interval = (self.max_value-self.min_value)/5
         self._label = label
+        self.scale_factor = scale_factor
 
         # Define canvas dimensions and center. winfo_reqwidth() requires the widget to be packed first,
         # so we'll use the provided kwargs if available, or fall back to a default.

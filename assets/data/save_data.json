@@ -1,12 +1,12 @@
 {
     "gauge_type_selection": [
+        "Boost",
         "Coolant_temp",
-        "Rpm",
         "Intake_Temp",
         "Ambiant_Temp"
     ],
     "inDebugMode": true,
     "inDarkMode": true,
     "inFullscreen": 0,
-    "gauge_scale": 1.2209302325581395
+    "gauge_scale": 1.0203488372093024
 }
